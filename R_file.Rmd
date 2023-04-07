@@ -1,0 +1,210 @@
+---
+title: "Séminaire de modélisation statistique"
+author: "Candice Baptiste Raja"
+date: "2023-04-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
+```
+
+## Importation de la base et des packages 
+Import des données via le lien suivant : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-a-compter-du-18-05-2022-si-dep/#/resources
+
+Nous utilisons le fichier : sp-fra-jour-cage10-2023-04-06-18h01.csv qui contient les données agrégées en france du taux d'incidence, actualisées chaque jour (dernière version du 6 avril 2023)
+
+
+```{r working directory and data, echo=FALSE, include=FALSE}
+lapply(c("dplyr","chron","ggplot2","tidyr","questionr","survival","forcats","tidyselect",
+         "data.table","table1","lubridate", "ggpubr","viridis","finalfit","survminer",
+         "ggpubr", "ggthemes", "gridExtra", "rstatix","stringr",
+         "wesanderson","kableExtra", "naniar","boot","scales","ggsci", "stringr",
+         "Hmisc","DescTools","swimplot", 'stats', 'EnvStats', 'finalfit'), 
+       library, character.only=TRUE)
+
+#données provenant du site
+#https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-a-compter-du-18-05-2022-si-dep/#/resources
+#utilisation du fichier :sp-fra-jour-cage10-2023-04-06-18h01.csv
+
+#setwd("C:/Users/candi/Desktop/ETUDES/ENSAE2A/semestre 2/options/projet stat")
+
+df_covid <- read.csv('sp-fra-jour-cage10-2023-04-06-18h01.csv', header = T, sep =';')
+```
+
+
+
+```{r tidy the data, echo=FALSE, include = FALSE}
+df_covid <- df_covid %>% mutate(
+  jour = as.Date(jour , format = "%d/%m/%Y")
+)
+```
+
+## Représentation des taux d'incidence
+On représente ci dessous le taux d'incidence par tranche d'âge. 
+```{r, fig.align="center", fig.cap="Figure 1: Taux d'incidence par tranche d'âge"}
+df_covid %>% group_by(jour, Ti, cage10) %>% ggplot(aes(x=jour, y=Ti, color = cage10)) + geom_line()
+```
+
+Mais nous nous intéressons aux données agrégées donc nous représentons ci dessous le taux d'incidence agrégé pour toutes les données de classes d'âge (somme des données).
+```{r, fig.align="center", fig.cap="Figure 2: Taux d'incidence agrégé"}
+df_agreg <- df_covid %>% group_by(jour) %>% summarise(Taux_agrégé = sum(Ti))
+df_agreg %>% ggplot(aes(x=jour, y=Taux_agrégé)) + geom_line()
+```
+
+```{r, fig.align="center", fig.cap="Figure 3: log du taux d'incidence"}
+df_agreg %>% ggplot(aes(x=jour, y=log(Taux_agrégé))) + geom_line()
+```
+
+
+## Analyse des données différenciées
+Nous différencions logarithmiquement les données afin de détecter les ruptures. La représentation de la série différenciée est présentée en figure 4. 
+```{r, fig.align="center", fig.cap="Figure 4: Taux d'incidence différenciés sur toute la période"}
+
+T_diff <- numeric(length =length(df_agreg$Taux_agrégé))
+diff_log <- numeric(length =length(df_agreg$Taux_agrégé))
+for (i in 2:length(df_agreg$Taux_agrégé)){
+  T_diff[i] = df_agreg$Taux_agrégé[i] - df_agreg$Taux_agrégé[i-1]
+  diff_log[i] = T_diff[i]/df_agreg$Taux_agrégé[i-1]
+}
+
+df_agreg <- df_agreg %>% mutate(
+  T_diff_agreg = T_diff,
+  diff_log_agreg = diff_log
+)
+
+df_agreg %>% ggplot( aes(x=jour, y =diff_log_agreg)) + geom_line()
+```
+
+Les données sont assez illisibles donc nous les montrons uniquement sur le mois d'octobre 2020 et l'on voit apparaître une tendance hebdomadaire. 
+
+```{r, fig.align="center", fig.cap="Figure 5: Taux d'incidence différenciés sur le mois d'octobre 2020"}
+df_agreg %>% filter(year(jour) == 2020 & month(jour) == 10) %>% ggplot( aes(x=jour, y =diff_log_agreg)) + geom_line()
+``` 
+
+En ne regardant que les lundis
+```{r, fig.align="center", fig.cap="Figure 6: Données différenciées seulement des lundis"}
+df_agreg <- df_agreg %>% mutate(
+  monday = case_when(
+    weekdays(jour) == 'lundi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_monday = case_when(
+    monday == 1~ cumsum(monday),
+    TRUE ~ 0),
+  tuesday = case_when(
+    weekdays(jour) == 'mardi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_tuesday = case_when(
+    tuesday == 1~ cumsum(tuesday),
+    TRUE ~ 0),
+  wed = case_when(
+    weekdays(jour) == 'mercredi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_wed = case_when(
+    wed == 1~ cumsum(wed) - 1,
+    TRUE ~ 0),
+  thur = case_when(
+    weekdays(jour) == 'jeudi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_thur = case_when(
+    thur == 1~ cumsum(wed) - 1,
+    TRUE ~ 0),
+  fri = case_when(
+    weekdays(jour) == 'vendredi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_fri = case_when(
+    fri == 1~ cumsum(fri) - 1,
+    TRUE ~ 0),
+  sat = case_when(
+    weekdays(jour) == 'samedi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_sat = case_when(
+    sat == 1~ cumsum(sat) - 1,
+    TRUE ~ 0),
+  sun = case_when(
+    weekdays(jour) == 'dimanche' ~ 1,
+    TRUE ~ 0
+  ),
+  num_sun = case_when(
+    sun == 1~ cumsum(sun) - 1,
+    TRUE ~ 0),
+  week = num_monday + num_tuesday + num_wed + num_thur + num_fri + num_sat + num_sun
+)
+
+
+#la série sur les lundis
+df_agreg %>% group_by(jour) %>% filter(monday == 1) %>%summarise(diff_log_agreg_mois = sum(diff_log_agreg))%>%ggplot( aes(x=jour, y =diff_log_agreg_mois)) + geom_line() +  geom_smooth(method = lm, formula = y ~ poly(x, 10))
+
+
+
+``` 
+
+
+En sommant par semaine ?
+
+```{r, fig.align="center", fig.cap="Figure 6: Données différenciées sommées par semaine"}
+#la série par semaine
+df_agreg <- df_agreg %>% mutate(
+  jour_ref = 1,
+  jour_num = cumsum(jour_ref)
+)
+df_agreg %>% group_by(year(jour), month(jour),week) %>% summarise(s = sum(diff_log_agreg), j = jour_num)%>%ggplot(aes(x=j,y=s)) +
+  geom_line() + geom_smooth(method = lm, formula = y ~ poly(x, 10))
+
+``` 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
