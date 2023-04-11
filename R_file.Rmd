@@ -15,7 +15,7 @@ lapply(c("dplyr","chron","ggplot2","tidyr","questionr","survival","forcats","tid
          "data.table","table1","lubridate", "ggpubr","viridis","finalfit","survminer",
          "ggpubr", "ggthemes", "gridExtra", "rstatix","stringr",
          "wesanderson","kableExtra", "naniar","boot","scales","ggsci", "stringr",
-         "Hmisc","DescTools","swimplot", 'stats', 'EnvStats', 'finalfit'), 
+         "Hmisc","DescTools","swimplot", 'stats', 'EnvStats', 'finalfit', 'data.table'), 
        library, character.only=TRUE)
 
 #setwd("C:/Users/candi/Desktop/ETUDES/ENSAE2A/semestre 2/options/projet stat")
@@ -27,7 +27,7 @@ et contient les taux d'incidence des hospitalisations, décès et réanimations.
 
 
 ```{r tidy the data 2, echo=FALSE, include = FALSE}
-data <- read.csv('covid-hospit-incid-2023-03-31-18h01 (1).csv', sep=";")
+data <- fread('covid-hospit-incid-2023-03-31-18h01 (1).csv', sep=";")
 
 data <- data %>% mutate(
   jour = as.Date(jour , format = "%Y-%m-%d")
