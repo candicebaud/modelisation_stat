@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
 ```
 
+# Base numéro 1 
 ## Importation de la base et des packages 
 Import des données via le lien suivant : https://www.data.gouv.fr/fr/datasets/donnees-de-laboratoires-pour-le-depistage-a-compter-du-18-05-2022-si-dep/#/resources
 
@@ -41,12 +42,8 @@ df_covid <- df_covid %>% mutate(
 ```
 
 ## Représentation des taux d'incidence
-On représente ci dessous le taux d'incidence par tranche d'âge. 
-```{r, fig.align="center", fig.cap="Figure 1: Taux d'incidence par tranche d'âge"}
-df_covid %>% group_by(jour, Ti, cage10) %>% ggplot(aes(x=jour, y=Ti, color = cage10)) + geom_line()
-```
+Nous nous intéressons aux données agrégées donc nous représentons ci dessous le taux d'incidence agrégé pour toutes les données de classes d'âge (somme des données).
 
-Mais nous nous intéressons aux données agrégées donc nous représentons ci dessous le taux d'incidence agrégé pour toutes les données de classes d'âge (somme des données).
 ```{r, fig.align="center", fig.cap="Figure 2: Taux d'incidence agrégé"}
 df_agreg <- df_covid %>% group_by(jour) %>% summarise(Taux_agrégé = sum(Ti))
 df_agreg %>% ggplot(aes(x=jour, y=Taux_agrégé)) + geom_line()
@@ -159,52 +156,153 @@ df_agreg %>% group_by(year(jour), month(jour),week) %>% summarise(s = sum(diff_l
 
 ``` 
 
+# Base numéro 2
+## Importation
+La base utilisée est disponible à ce lien :https://www.data.gouv.fr/fr/datasets/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/
+et contient les taux d'incidence des hospitalisations, décès et réanimations. 
 
 
+```{r tidy the data 2, echo=FALSE, include = FALSE}
+data <- read.csv('covid-hospit-incid-2023-03-31-18h01 (1).csv', sep=";")
+
+data <- data %>% mutate(
+  jour = as.Date(jour , format = "%Y-%m-%d")
+)
+data <- data %>% mutate(
+  dep = as.factor(dep)
+)
+
+data <- data %>% filter(dep != '971') %>% filter(dep !='972')%>% filter(dep !='973')%>% filter(dep !='974')%>% filter(dep !='976')%>% filter(dep !='978') #pour supprimer les domtom
+
+```
+
+Taux d'incidence hospitalisation, de réanimation et de décès agrégés au niveau national
+```{r, fig.align="center", fig.cap="Figure 7: Taux d'incidence"}
+library(cowplot)
+data_agreg <- data %>% group_by(jour) %>%summarise(Taux_agrégé_hosp = sum(incid_hosp), Taux_agrege_rea = sum(incid_rea), Taux_agrege_dc = sum(incid_dc))
+
+data_agreg %>% ggplot(aes(x=jour, y=Taux_agrégé_hosp)) + geom_line()
+g2 <- data_agreg %>% ggplot(aes(x=jour, y=Taux_agrege_rea)) + geom_line()
+g3 <- data_agreg %>% ggplot(aes(x=jour, y=Taux_agrege_dc)) + geom_line()
+
+plot_grid(g2, g3)
+```
+
+Log des taux d'incidence agrégés
+
+```{r, fig.align="center", fig.cap="Figure 7: log du taux d'incidence"}
+data_agreg %>% ggplot(aes(x=jour, y=log(Taux_agrégé_hosp))) + geom_line()
+
+g2 <- data_agreg %>% ggplot(aes(x=jour, y=log(Taux_agrege_rea))) + geom_line()
+g3 <- data_agreg %>% ggplot(aes(x=jour, y=log(Taux_agrege_dc))) + geom_line()
+plot_grid(g2, g3)
+```
+
+## Différence logarithmique
+On filtre les données et on s'arrête juste avant février 2023 car il y a un pic énorme qui écrase le reste des données.  
+```{r, fig.align="center", fig.cap="Figure 8: Taux d'incidence en différence logarithmique"}
+
+T_diff <- numeric(length =length(data_agreg$Taux_agrégé_hosp))
+diff_log <- numeric(length =length(data_agreg$Taux_agrégé_hosp))
+for (i in 2:length(data_agreg$Taux_agrégé_hosp)){
+  T_diff[i] = data_agreg$Taux_agrégé_hosp[i] - data_agreg$Taux_agrégé_hosp[i-1]
+  diff_log[i] = T_diff[i]/data_agreg$Taux_agrégé_hosp[i-1]
+}
+
+data_agreg <- data_agreg %>% mutate(
+  T_diff_agreg = T_diff,
+  diff_log_agreg = diff_log
+)
 
 
+data_agreg %>% filter(jour < as.Date('2023-02-01', format = '%Y-%m-%d')) %>% ggplot(aes(x=jour, y =diff_log_agreg)) + geom_line() #on filtre les données car anomalies fin février 
+```
 
 
+En regardant seulement les valeurs des lundis. 
+
+```{r, fig.align="center", fig.cap="Figure 9: Données différenciées seulement des lundis et mardis"}
+data_agreg <- data_agreg %>% mutate(
+  monday = case_when(
+    weekdays(jour) == 'lundi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_monday = case_when(
+    monday == 1~ cumsum(monday),
+    TRUE ~ 0),
+  tuesday = case_when(
+    weekdays(jour) == 'mardi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_tuesday = case_when(
+    tuesday == 1~ cumsum(tuesday),
+    TRUE ~ 0),
+  wed = case_when(
+    weekdays(jour) == 'mercredi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_wed = case_when(
+    wed == 1~ cumsum(wed) - 1,
+    TRUE ~ 0),
+  thur = case_when(
+    weekdays(jour) == 'jeudi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_thur = case_when(
+    thur == 1~ cumsum(wed) - 1,
+    TRUE ~ 0),
+  fri = case_when(
+    weekdays(jour) == 'vendredi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_fri = case_when(
+    fri == 1~ cumsum(fri) - 1,
+    TRUE ~ 0),
+  sat = case_when(
+    weekdays(jour) == 'samedi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_sat = case_when(
+    sat == 1~ cumsum(sat) - 1,
+    TRUE ~ 0),
+  sun = case_when(
+    weekdays(jour) == 'dimanche' ~ 1,
+    TRUE ~ 0
+  ),
+  num_sun = case_when(
+    sun == 1~ cumsum(sun) - 1,
+    TRUE ~ 0),
+  week = num_monday + num_tuesday + num_wed + num_thur + num_fri + num_sat + num_sun
+)
 
 
+#la série sur les lundis
+data_agreg %>% group_by(jour) %>% filter(monday == 1)%>% filter(jour < as.Date('2023-02-01', format = '%Y-%m-%d')) %>%summarise(diff_log_agreg_lundi = sum(diff_log_agreg))%>%ggplot( aes(x=jour, y =diff_log_agreg_lundi)) + geom_line()+ geom_smooth(method = lm, formula = y ~ poly(x, 10))
+
+data_agreg %>% group_by(jour) %>% filter(tuesday == 1)%>% filter(jour < as.Date('2023-02-01', format = '%Y-%m-%d')) %>%summarise(diff_log_agreg_lundi = sum(diff_log_agreg))%>%ggplot( aes(x=jour, y =diff_log_agreg_lundi)) + geom_line()+ geom_smooth(method = lm, formula = y ~ poly(x, 10))
+
+``` 
+Les lundis: on voit de plus fortes variations car on avait des valeurs mal relevées le week-end. 
+Si l'on revient à l'évolution du taux d'incidence seulement les mardis et lundis, on voit que l'on a la même évolution : 
+
+```{r, fig.align="center", fig.cap="Figure 10: Taux d'incidence seulement des lundis et mardis"}
+data_agreg %>% group_by(jour) %>% filter(monday == 1) %>% ggplot(aes(x=jour, y=Taux_agrégé_hosp)) + geom_line()
 
 
+data_agreg %>% group_by(jour) %>% filter(tuesday == 1) %>% ggplot(aes(x=jour, y=Taux_agrégé_hosp)) + geom_line()
+```
 
 
+En sommant les valeurs par semaine (pour moyenner en quelque sorte ? )
 
+```{r, fig.align="center", fig.cap="Figure 10: Données différenciées sommées par semaine"}
+#la série par semaine
+data_agreg <- data_agreg %>% mutate(
+  jour_ref = 1,
+  jour_num = cumsum(jour_ref)
+)
+data_agreg %>% filter(jour < as.Date('2023-02-01', format = '%Y-%m-%d'))%>% group_by(year(jour), month(jour),week) %>% summarise(s = sum(diff_log_agreg), j = jour_num)%>%ggplot(aes(x=j,y=s)) +
+  geom_line()+ geom_smooth(method = lm, formula = y ~ poly(x, 10))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+``` 
 
