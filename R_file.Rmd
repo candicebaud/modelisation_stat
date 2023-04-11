@@ -138,7 +138,7 @@ plot_grid(g1,g2,g3,g4)
 ``` 
 
 
-# Variations relatives 
+# Variations relatives hospitalières
 Le premier graphe correspond à la série différenciée logarithmiquement représentée par jour. Le deuxième graphe correspond à une moyenne par semaine de la différence logarithmique par jour. 
 Nous nous sommes restreints à avant février 2023 pour la lisibilité des données car il y a un pic en février en 2023 qui écrase le reste du graphe. 
 ```{r, fig.align="center"}
@@ -174,4 +174,26 @@ g2
 
 ``` 
 
+De même ci-dessous pour les réanimations.
 
+```{r, fig.align="center"}
+
+g3 <- data_agreg %>% filter(jour < as.Date('2023-02-01', format = '%Y-%m-%d')) %>%ggplot(aes(x=jour,y=diff_log_rea_agreg))+
+  geom_line() + xlab('jour') + ylab('Hospitalisations')
+g3
+
+g4 <- data_agreg %>% filter(jour < as.Date('2023-02-01', format = '%Y-%m-%d')) %>% group_by(week) %>% summarise(s=mean(diff_log_rea_agreg)) %>%ggplot(aes(x=week,y=s))+
+  geom_line() + xlab('jour') + ylab('Hospitalisations')
+
+g4
+```
+
+
+autre méthode ? on retrouve pareil ...  
+```{r, fig.align="center"}
+data_agreg %>% mutate(
+  diff_hosp = diff(Taux_agrégé_hosp)/Taux_agrégé_hosp
+)%>% filter(jour < as.Date('2023-02-01', format = '%Y-%m-%d')) %>%ggplot(aes(x=jour,y=diff_hosp))+
+  geom_line() + xlab('jour') + ylab('Hospitalisations')
+
+```
