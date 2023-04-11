@@ -139,61 +139,32 @@ plot_grid(g1,g2,g3,g4)
 
 
 # Variations relatives hospitalières
-Le premier graphe correspond à la série différenciée logarithmiquement représentée par jour. Le deuxième graphe correspond à une moyenne par semaine de la différence logarithmique par jour. 
-Nous nous sommes restreints à avant février 2023 pour la lisibilité des données car il y a un pic en février en 2023 qui écrase le reste du graphe. 
+En utilisant la différence première sur les valeurs agrégrées par semaine, on a des graphes cohérents avec l'article. 
+Pour éviter d'avoir le dernier pic qui écrase le reste, on enlève les valeurs des deux dernières semaines.
 ```{r, fig.align="center"}
-T_diff_hosp <- numeric(length =length(data_agreg$Taux_agrégé_hosp))
-diff_log_hosp <- numeric(length =length(data_agreg$Taux_agrégé_hosp))
-for (i in 2:length(data_agreg$Taux_agrégé_hosp)){
-  T_diff_hosp[i] = data_agreg$Taux_agrégé_hosp[i] - data_agreg$Taux_agrégé_hosp[i-1]
-  diff_log_hosp[i] = T_diff_hosp[i]/data_agreg$Taux_agrégé_hosp[i-1]
-}
+data_week <- data_agreg %>% group_by(week) %>% summarise(s_hosp=mean(Taux_agrégé_hosp), s_rea = mean(Taux_agrege_rea), s_dc = mean(Taux_agrege_dc), s_rad = sum(Taux_agrege_rad))
 
-T_diff_rea <- numeric(length =length(data_agreg$Taux_agrégé_hosp))
-diff_log_rea <- numeric(length =length(data_agreg$Taux_agrégé_hosp))
-for (i in 2:length(data_agreg$Taux_agrégé_hosp)){
-  T_diff_rea[i] = data_agreg$Taux_agrégé_hosp[i] - data_agreg$Taux_agrégé_hosp[i-1]
-  diff_log_rea[i] = T_diff_rea[i]/data_agreg$Taux_agrégé_hosp[i-1]
-}
-
-data_agreg <- data_agreg %>% mutate(
-  T_diff_hosp_agreg = T_diff_hosp,
-  diff_log_hosp_agreg = diff_log_hosp,
-  T_diff_rea_agreg = T_diff_rea,
-  diff_log_rea_agreg = diff_log_rea)
-
-
-g1 <- data_agreg %>% filter(jour < as.Date('2023-02-01', format = '%Y-%m-%d')) %>%ggplot(aes(x=jour,y=diff_log_hosp_agreg))+
-  geom_line() + xlab('jour') + ylab('Hospitalisations')
-g1
-
-g2 <- data_agreg %>% filter(jour < as.Date('2023-02-01', format = '%Y-%m-%d')) %>% group_by(week) %>% summarise(s=mean(diff_log_hosp_agreg)) %>%ggplot(aes(x=week,y=s))+
+g1 <- data_week %>% mutate(
+  diff_hosp = diff(s_hosp)/s_hosp
+) %>% filter(week<158) %>% ggplot(aes(x=week,y=diff_hosp))+
   geom_line() + xlab('jour') + ylab('Hospitalisations')
 
-g2
 
-``` 
+g2 <- data_week %>% mutate(
+  diff_rea = diff(s_rea)/s_rea
+) %>% filter(week<158) %>% ggplot(aes(x=week,y=diff_rea))+
+  geom_line() + xlab('jour') + ylab('Réanimations')
 
-De même ci-dessous pour les réanimations.
+g3 <- data_week %>% mutate(
+  diff_dc = diff(s_dc)/s_dc
+)  %>% filter(week<158)%>% ggplot(aes(x=week,y=diff_dc))+
+  geom_line() + xlab('jour') + ylab('Décès')
 
-```{r, fig.align="center"}
+g4 <- data_week %>% mutate(
+  diff_rad = diff(s_rad)/s_rad
+) %>% filter(week<158) %>% ggplot(aes(x=week,y=diff_rad))+
+  geom_line() + xlab('jour') + ylab('RAD')
 
-g3 <- data_agreg %>% filter(jour < as.Date('2023-02-01', format = '%Y-%m-%d')) %>%ggplot(aes(x=jour,y=diff_log_rea_agreg))+
-  geom_line() + xlab('jour') + ylab('Hospitalisations')
-g3
-
-g4 <- data_agreg %>% filter(jour < as.Date('2023-02-01', format = '%Y-%m-%d')) %>% group_by(week) %>% summarise(s=mean(diff_log_rea_agreg)) %>%ggplot(aes(x=week,y=s))+
-  geom_line() + xlab('jour') + ylab('Hospitalisations')
-
-g4
+plot_grid(g1, g2, g3, g4)
 ```
 
-
-autre méthode ? on retrouve pareil ...  
-```{r, fig.align="center"}
-data_agreg %>% mutate(
-  diff_hosp = diff(Taux_agrégé_hosp)/Taux_agrégé_hosp
-)%>% filter(jour < as.Date('2023-02-01', format = '%Y-%m-%d')) %>%ggplot(aes(x=jour,y=diff_hosp))+
-  geom_line() + xlab('jour') + ylab('Hospitalisations')
-
-```
