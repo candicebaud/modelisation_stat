@@ -3,7 +3,8 @@ load(file = "Données hospitalisation.RData")
 load(file = "Données hospitalisation concaténées")
 require(zoo)
 
-setwd("C:/Users/baptg/OneDrive/Bureau/Projet Modelisation Stat")
+#setwd("C:/Users/baptg/OneDrive/Bureau/Projet Modelisation Stat")
+setwd("C:/Users/candi/Desktop/ETUDES/ENSAE2A/semestre 2/options/projet stat/modelisation_stat")
 data <- read.csv('covid-hospit-incid-2023-03-31-18h01 (1).csv', sep=";")
 
 require(dplyr)

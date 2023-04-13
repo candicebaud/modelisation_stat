@@ -155,8 +155,6 @@ g6 <- data_week %>% mutate(
 ) %>% filter(week<158) %>% ggplot(aes(x=week,y=diff_rea))+
   geom_line() + xlab('jour') + ylab('Réanimations (série différenciée)')
 
-
-
 #g7 <- data_week %>% mutate(diff_dc = diff(s_dc)/s_dc)  %>% filter(week<158)%>% ggplot(aes(x=week,y=diff_dc))+ geom_line() + xlab('jour') + ylab('Décès')
 
 #g8 <- data_week %>% mutate(diff_rad = diff(s_rad)/s_rad) %>% filter(week<158) %>% ggplot(aes(x=week,y=diff_rad))+geom_line() + xlab('jour') + ylab('RAD')
@@ -164,4 +162,17 @@ g6 <- data_week %>% mutate(
 
 plot_grid(g1, g2, g5, g6)
 ```
+
+# Moyenne mobile 
+```{r, fig.align="center"}
+test <- data_agreg %>% mutate(diff_hosp = diff(Taux_agrégé_hosp)/Taux_agrégé_hosp, diff_rea = diff(Taux_agrege_rea)/Taux_agrege_rea, diff_dc = diff(Taux_agrege_dc)/Taux_agrege_dc, diff_rad = diff(Taux_agrege_rad)/Taux_agrege_rad) 
+
+m_hosp <- rollmean(test$diff_hosp, 7)
+diff_hosp <- test$diff_hosp[1:1102]
+
+```
+
+
+
+
 
