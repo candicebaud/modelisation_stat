@@ -115,10 +115,6 @@ data_agreg <- data_agreg %>% mutate(
 
 ```{r, fig.align="center"}
 #la série par semaine
-#data_agreg <- data_agreg %>% mutate(jour_ref = 1,jour_num = cumsum(jour_ref))
-#data_agreg %>% filter(jour < as.Date('2023-02-01', format = '%Y-%m-%d'))%>% group_by(year(jour), month(jour),week) %>% summarise(s = sum(diff_log_agreg), j = jour_num)%>%ggplot(aes(x=j,y=s)) +geom_line()+ geom_smooth(method = lm, formula = y ~ poly(x, 10))
-
-
 #données normales sur 7 jours 
 g1 <- data_agreg %>% group_by(week) %>% summarise(s=mean(Taux_agrégé_hosp))%>%ggplot(aes(x=week,y=s))+
   geom_line() + xlab('Semaine') + ylab('Hospitalisations')
@@ -165,14 +161,106 @@ plot_grid(g1, g2, g5, g6)
 
 # Moyenne mobile 
 ```{r, fig.align="center"}
-test <- data_agreg %>% mutate(diff_hosp = diff(Taux_agrégé_hosp)/Taux_agrégé_hosp, diff_rea = diff(Taux_agrege_rea)/Taux_agrege_rea, diff_dc = diff(Taux_agrege_dc)/Taux_agrege_dc, diff_rad = diff(Taux_agrege_rad)/Taux_agrege_rad) 
+#test <- data_agreg %>% mutate(diff_hosp = diff(Taux_agrégé_hosp)/Taux_agrégé_hosp, diff_rea = diff(Taux_agrege_rea)/Taux_agrege_rea, diff_dc = diff(Taux_agrege_dc)/Taux_agrege_dc, diff_rad = diff(Taux_agrege_rad)/Taux_agrege_rad) 
 
-m_hosp <- rollmean(test$diff_hosp, 7)
-diff_hosp <- test$diff_hosp[1:1102]
+library('zoo')
+m2 <- rollmean(data_agreg$Taux_agrégé_hosp, k=7, align = 'right', fill = NA)
+m_hosp_diff <- diff(m2)/m2
+#plot(data_agreg$jour, m2, type = 'l', col = 'gray')
 
+m1 <- rollmean(data_agreg$Taux_agrege_rea, k=7, align = 'right', fill = NA)
+m_rea_diff <- diff(m1)/m1
+
+data_agreg <- data_agreg %>% mutate(
+  m_hosp_diff = m_hosp_diff,
+  m_rea_diff = m_rea_diff
+)
+
+
+g7 <- ggplot(data_agreg, aes(jour, m_hosp_diff)) + geom_line() + ylab('Hospitalisations (différenciée)')
+
+g8 <- ggplot(data_agreg, aes(jour, m_rea_diff)) + geom_line() + ylab('Réanimations (différenciée)')
+
+plot_grid(g1, g2, g7, g8)
 ```
 
+# En filtrant pour ne pas avoir le gros pic qui écrase tout et en mettant tout en moyenne mobile
+```{r, fig.align="center"}
+#test <- data_agreg %>% mutate(diff_hosp = diff(Taux_agrégé_hosp)/Taux_agrégé_hosp, diff_rea = diff(Taux_agrege_rea)/Taux_agrege_rea, diff_dc = diff(Taux_agrege_dc)/Taux_agrege_dc, diff_rad = diff(Taux_agrege_rad)/Taux_agrege_rad) 
 
+library('zoo')
 
+data_agreg <- data_agreg %>% mutate(
+  m_hosp = rollmean(Taux_agrégé_hosp, k=7, align = 'right', fill = NA),
+  m_rea = rollmean(Taux_agrege_rea, k=7, align = 'right', fill = NA)
+)
 
+#g1_bis <- data_agreg %>% filter(week<140) %>% group_by(week) %>% summarise(s=mean(Taux_agrégé_hosp))%>%ggplot(aes(x=week,y=s))+geom_line() + xlab('Semaine') + ylab('Hospitalisations')
 
+g1_bis_bis <- data_agreg %>%filter(jour > as.Date('2022-01-01', format = '%Y-%m-%d')) %>% filter(jour <as.Date('2022-06-01', format = '%Y-%m-%d'))%>% ggplot(aes(x=jour, y = m_hosp)) + geom_line() + ylab('Hospitalisations')
+
+#g2_bis <- data_agreg %>%  filter(week<140) %>%group_by(week) %>% summarise(s=mean(Taux_agrege_rea))%>%ggplot(aes(x=week,y=s))+geom_line() + xlab('Semaine') + ylab('Réanimations')
+
+g2_bis_bis <- data_agreg %>%filter(jour > as.Date('2022-01-01', format = '%Y-%m-%d')) %>% filter(jour <as.Date('2022-06-01', format = '%Y-%m-%d')) %>% ggplot(aes(x=jour, y = m_rea)) + geom_line() + ylab('Réanimations')
+
+g9 <- data_agreg%>%filter(jour > as.Date('2022-01-01', format = '%Y-%m-%d')) %>% filter(jour <as.Date('2022-06-01', format = '%Y-%m-%d'))%>%ggplot(aes(jour, m_hosp_diff)) + geom_line() + ylab('Hospitalisations (différenciée)')
+
+g10 <-  data_agreg %>%filter(jour > as.Date('2022-01-01', format = '%Y-%m-%d')) %>% filter(jour <as.Date('2022-06-01', format = '%Y-%m-%d')) %>%ggplot(aes(jour, m_rea_diff)) + geom_line() + ylab('Réanimations (différenciée)')
+
+plot_grid(g1_bis_bis, g2_bis_bis, g9, g10)
+```
+
+# Points de rupture
+```{r, fig.align="center"}
+data_agreg <- data_agreg %>% mutate(
+  intercept = 1
+)
+
+data_agreg <- data_agreg %>% mutate(
+  temps = cumsum(intercept)
+)
+
+corresp <- function(liste_dates){
+  pts_rupture <- rep(NA, length(liste_dates))
+  for(i in 1:length(liste_dates)){
+    pts_rupture[i] = (data_agreg %>% filter(jour == as.Date(liste_dates[i], format = '%Y-%m-%d')))$temps
+  }
+  return(pts_rupture)
+}
+
+creer_base <- function(pts_rupture){
+  pts_rupture = sort(pts_rupture, decreasing = F)
+  mat <- matrix(nrow = length(data_agreg$temps), ncol = length(pts_rupture))
+  for (j in 1:length(pts_rupture)){
+    mat[,j] = c(rep(0, pts_rupture[j]), seq(from = 1, to = length(data_agreg$temps) - pts_rupture[j], by = 1))
+  }
+  return(mat)
+}
+
+ajout_base <- function(pts_rupture, data_agreg){
+  mat = as.data.frame(creer_base(pts_rupture))
+  return(cbind(data_agreg, mat))
+}
+
+liste_dates <- c('2020-04-19', '2020-05-01')
+pts_rupture <- corresp(liste_dates)
+new_data <- ajout_base(pts_rupture, data_agreg)
+
+reg <- lm(log(Taux_agrégé_hosp) ~ temps + I(temps^2) + V1 + V2, data = new_data)
+summary(reg)
+
+coef = reg$coef
+
+fonction_obtenue <- function(pts_rupture, coef, x){
+  sum = sum(coef[4:length(coef)]*(x-pts_rupture)**2)
+  return(exp(coef[1] + coef[2]*x + coef[3]*x**2 + sum))
+}
+x = seq(from = 1, to = 100, by = 1)
+to_plot = fonction_obtenue(pts_rupture, coef, x)
+
+plot(x, to_plot)
+
+new_data %>% filter(jour == as.Date('2022-06-01', format = '%Y-%m-%d'))
+
+coef
+``` 

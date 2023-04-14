@@ -1,0 +1,343 @@
+---
+title: "Implémentation d'un modèle mathématique pour la surveillance du covid"
+author: "Candice Baptiste Raja"
+date: "2023-04-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
+```
+
+
+```{r working directory and data, echo=FALSE, include=FALSE}
+lapply(c("dplyr","chron","ggplot2","tidyr","questionr","survival","forcats","tidyselect",
+         "data.table","table1","lubridate", "ggpubr","viridis","finalfit","survminer",
+         "ggpubr", "ggthemes", "gridExtra", "rstatix","stringr",
+         "wesanderson","kableExtra", "naniar","boot","scales","ggsci", "stringr",
+         "Hmisc","DescTools","swimplot", 'stats', 'EnvStats', 'finalfit', 'data.table'), 
+       library, character.only=TRUE)
+
+#setwd("C:/Users/candi/Desktop/ETUDES/ENSAE2A/semestre 2/options/projet stat")
+
+```
+
+La base utilisée est disponible à ce lien :https://www.data.gouv.fr/fr/datasets/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/
+et contient les taux d'incidence des hospitalisations, décès et réanimations. 
+
+
+```{r tidy the data 2, echo=FALSE, include = FALSE}
+data <- fread('covid-hospit-incid-2023-03-31-18h01 (1).csv', sep=";")
+
+data <- data %>% mutate(
+  jour = as.Date(jour , format = "%Y-%m-%d")
+)
+data <- data %>% mutate(
+  dep = as.factor(dep)
+)
+
+data <- data %>% filter(dep != '971') %>% filter(dep !='972')%>% filter(dep !='973')%>% filter(dep !='974')%>% filter(dep !='976')%>% filter(dep !='978') #pour supprimer les domtom
+
+```
+
+
+
+# Taux d'incidence hospitalisation, de réanimation et de décès agrégés au niveau national, avec la moyenne mobile
+```{r, fig.align="center"}
+library(cowplot)
+data_agreg <- data %>% group_by(jour) %>%summarise(Taux_agrégé_hosp = sum(incid_hosp), Taux_agrege_rea = sum(incid_rea), Taux_agrege_dc = sum(incid_dc), Taux_agrege_rad = sum(incid_rad))
+
+library('zoo')
+m2 <- rollmean(data_agreg$Taux_agrégé_hosp, k=7, align = 'right', fill = NA)
+m_hosp_diff <- diff(m2)/m2
+#plot(data_agreg$jour, m2, type = 'l', col = 'gray')
+
+m1 <- rollmean(data_agreg$Taux_agrege_rea, k=7, align = 'right', fill = NA)
+m_rea_diff <- diff(m1)/m1
+
+m3 <- rollmean(data_agreg$Taux_agrege_dc, k=7, align = 'right', fill = NA)
+m_dc_diff <- diff(m3)/m3
+
+m4 <- rollmean(data_agreg$Taux_agrege_rad, k=7, align = 'right', fill = NA)
+m_rad_diff <- diff(m4)/m4
+
+data_agreg <- data_agreg %>% mutate(
+  m_hosp = m2,
+  m_rea = m1,
+  m_dc = m3,
+  m_rad = m4,
+  m_hosp_diff = m_hosp_diff,
+  m_rea_diff = m_rea_diff,
+  m_dc_diff = m_dc_diff,
+  m_rad_diff = m_rad_diff
+)
+
+
+g1 <- data_agreg %>% ggplot(aes(x=jour)) + geom_line(aes(y=Taux_agrégé_hosp), color = 'black') + geom_line(aes(y=m_hosp), color = 'red') + xlab('Date') + ylab("Hospitalisations")
+g2 <- data_agreg %>% ggplot(aes(x=jour)) + geom_line(aes(y=Taux_agrege_rea), color = 'black') + geom_line(aes(y=m_rea), color = 'red') + xlab('Date') + ylab("Réanimations")
+g3 <- data_agreg %>% ggplot(aes(x=jour)) + geom_line(aes(y=Taux_agrege_dc), color='black') + geom_line(aes(y=m_dc), color = 'red') + xlab('Date') + ylab("Décès")
+g4 <- data_agreg %>% ggplot(aes(x=jour)) + geom_line(aes(y=Taux_agrege_rad), color = 'black') + geom_line(aes(y=m_rad), color = 'red')+ xlab('Date') + ylab("Retours à domicile")
+
+plot_grid(g1, g2, g3, g4)
+```
+
+# Séries différenciées logarithmiquement 
+```{r, fig.align="center"}
+g7 <- ggplot(data_agreg, aes(jour, m_hosp_diff)) + geom_line() + ylab('Hospitalisations (différenciée)')
+
+g8 <- ggplot(data_agreg, aes(jour, m_rea_diff)) + geom_line() + ylab('Réanimations (différenciée)')
+
+g9 <- ggplot(data_agreg, aes(jour, m_dc_diff)) + geom_line() + ylab('Décès (différenciée)')
+
+g10 <- ggplot(data_agreg, aes(jour, m_rad_diff)) + geom_line() + ylab('Retours à domicile (différenciée)')
+
+plot_grid(g7, g8, g9, g10)
+```
+
+# Restriction à l'année 2022 
+## Taux d'incidence hospitalisation, de réanimation et de décès agrégés au niveau national, avec la moyenne mobile
+```{r, fig.align="center"}
+data_agreg <- data_agreg %>% filter(jour > as.Date('2022-01-01', format = '%Y-%m-%d')) %>% filter(jour < as.Date('2022-12-31', format = '%Y-%m-%d'))
+
+g1 <- data_agreg %>% ggplot(aes(x=jour)) + geom_line(aes(y=Taux_agrégé_hosp), color = 'black') + geom_line(aes(y=m_hosp), color = 'red') + xlab('Date') + ylab("Hospitalisations")
+g2 <- data_agreg %>% ggplot(aes(x=jour)) + geom_line(aes(y=Taux_agrege_rea), color = 'black') + geom_line(aes(y=m_rea), color = 'red') + xlab('Date') + ylab("Réanimations")
+g3 <- data_agreg %>% ggplot(aes(x=jour)) + geom_line(aes(y=Taux_agrege_dc), color='black') + geom_line(aes(y=m_dc), color = 'red') + xlab('Date') + ylab("Décès")
+g4 <- data_agreg %>% ggplot(aes(x=jour)) + geom_line(aes(y=Taux_agrege_rad), color = 'black') + geom_line(aes(y=m_rad), color = 'red')+ xlab('Date') + ylab("Retours à domicile")
+
+plot_grid(g1, g2, g3, g4)
+
+```
+
+## Séries différenciées logarithmiquement
+```{r, fig.align="center"}
+g7 <- ggplot(data_agreg, aes(jour, m_hosp_diff)) + geom_line() + ylab('Hospitalisations (différenciée)')
+
+g8 <- ggplot(data_agreg, aes(jour, m_rea_diff)) + geom_line() + ylab('Réanimations (différenciée)')
+
+g9 <- ggplot(data_agreg, aes(jour, m_dc_diff)) + geom_line() + ylab('Décès (différenciée)')
+
+g10 <- ggplot(data_agreg, aes(jour, m_rad_diff)) + geom_line() + ylab('Retours à domicile (différenciée)')
+
+plot_grid(g7, g8, g9, g10)
+
+```
+
+# Points de rupture 
+
+## Points de rupture repérés à la main :
+```{r, fig.align="center"}
+pts_rupture_hosp <- c('2022-01-02', '2022-02-14', '2022-04-01', '2022-05-15', '2022-06-24', '2022-07-31', '2022-09-30', '2022-11-01', '2022-12-01','2022-12-30')
+data_hosp <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_hosp, format='%Y-%m-%d') == T)
+
+pts_rupture_rea <- c('2022-01-02', '2022-02-15', '2022-04-01', '2022-05-13', '2022-07-04', '2022-07-31', '2022-09-30', '2022-10-30', '2022-12-01','2022-12-30')
+data_rea <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_rea, format='%Y-%m-%d') == T)
+
+pts_rupture_dc <- c('2022-01-02', '2022-02-14', '2022-04-01', '2022-05-15', '2022-06-24', '2022-07-31', '2022-09-30', '2022-11-01', '2022-12-01','2022-12-30')
+data_dc <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_dc, format='%Y-%m-%d') == T)
+
+pts_rupture_rad <- c('2022-01-02', '2022-02-14', '2022-04-01', '2022-05-15', '2022-06-24', '2022-07-31', '2022-09-30', '2022-11-01', '2022-12-01','2022-12-30')
+data_rad <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_rad, format='%Y-%m-%d') == T)
+
+
+par(mfrow=c(2,2))
+plot(data_agreg$jour, data_agreg$m_hosp_diff, type='l', color = 'black', ylab = 'Hospitalisations', xlab = 'date')
+lines(data_hosp$jour, data_hosp$m_hosp_diff, type = 'l', col = 'red')
+
+plot(data_agreg$jour, data_agreg$m_rea_diff, type='l', color = 'black', ylab = 'Réanimations', xlab = 'date')
+lines(data_rea$jour, data_hosp$m_rea_diff, type = 'l', col = 'red')
+
+plot(data_agreg$jour, data_agreg$m_dc_diff, type='l', color = 'black', ylab = 'Décès', xlab = 'date')
+lines(data_dc$jour, data_hosp$m_dc_diff, type = 'l', col = 'red')
+
+plot(data_agreg$jour, data_agreg$m_rad_diff, type='l', color = 'black', ylab = 'Retours à domicile', xlab = 'date')
+lines(data_rad$jour, data_hosp$m_rad_diff, type = 'l', col = 'red')
+
+```
+
+
+## Fit du modèle
+
+```{r fonctions, echo= FALSE, include = FALSE}
+data_agreg <- data_agreg %>% mutate(
+  intercept = 1
+)
+
+data_agreg <- data_agreg %>% mutate(
+  temps = cumsum(intercept)
+)
+
+corresp <- function(liste_dates){
+  pts_rupture <- rep(NA, length(liste_dates))
+  for(i in 1:length(liste_dates)){
+    pts_rupture[i] = (data_agreg %>% filter(jour == as.Date(liste_dates[i], format = '%Y-%m-%d')))$temps
+  }
+  return(pts_rupture)
+}
+
+creer_base <- function(pts_rupture){
+  pts_rupture = sort(pts_rupture, decreasing = F)
+  mat <- matrix(nrow = length(data_agreg$temps), ncol = length(pts_rupture))
+  for (j in 1:length(pts_rupture)){
+    mat[,j] = c(rep(0, pts_rupture[j]), seq(from = 1, to = length(data_agreg$temps) - pts_rupture[j], by = 1))
+  }
+  return(mat)
+}
+
+ajout_base <- function(pts_rupture, data_agreg){
+  mat = as.data.frame(creer_base(pts_rupture))
+  return(cbind(data_agreg, mat))
+}
+
+indicatrice <- function(x){
+  if(x>= 0){
+    return(x)
+  }
+  else{
+    return(0)
+  }
+}
+
+indicatrice_vec<- function(x){
+  n = length(x)
+  res <- rep(NA, n)
+  for (i in 1:n){
+    res[i] = indicatrice(x[i])
+  }
+  return(res)
+}
+
+#coef sont les coefficients de la régression linéaire
+fonction_obtenue <- function(pts_rupture, coef, x){
+  to_plot <- rep(0, length(x))
+  for(z in x){
+  to_plot[z] = coef[1] + coef[2]*z + coef[3]*(z**2) + sum(coef[4:length(coef)]*(indicatrice_vec(z-pts_rupture))**2)
+  }
+  return(to_plot)
+}
+```
+
+
+Fit sur les 4 séries 
+```{r, fig.align="center"}
+liste_dates_hosp <- c('2022-02-14', '2022-04-01', '2022-05-15', '2022-06-24', '2022-07-31', '2022-09-30', '2022-11-01', '2022-12-01')
+
+liste_dates_rea <- c('2022-02-15', '2022-04-01', '2022-05-13', '2022-07-04', '2022-07-31', '2022-09-30', '2022-10-30', '2022-12-01')
+
+liste_dates_dc <- c( '2022-02-14', '2022-04-01', '2022-05-15', '2022-06-24', '2022-07-31', '2022-09-30', '2022-11-01', '2022-12-01')
+
+liste_dates_rad <- c( '2022-02-14', '2022-04-01', '2022-05-15', '2022-06-24', '2022-07-31', '2022-09-30', '2022-11-01', '2022-12-01')
+
+plot_all <- function(liste_dates_hosp, liste_dates_rea, liste_dates_dc, liste_dates_rad){
+  x = seq(from = 1, to = 363, by = 1)
+  pts_rupture_hosp <- corresp(liste_dates_hosp)
+  new_data <- ajout_base(pts_rupture_hosp, data_agreg)
+  reg <- lm(log(Taux_agrégé_hosp) ~ temps + I(temps^2) + I(V1^2) + I(V2^2) + I(V3^2)+ I(V4^2) + I(V5^2) + I(V6^2) + I(V7^2) + I(V8^2), data = new_data)
+  coef = reg$coef
+  to_plot_hosp<- fonction_obtenue(pts_rupture_hosp, coef, x)
+  
+  pts_rupture_rea <- corresp(liste_dates_rea)
+  new_data <- ajout_base(pts_rupture_rea, data_agreg)
+  reg <- lm(log(Taux_agrege_rea) ~ temps + I(temps^2) + I(V1^2) + I(V2^2) + I(V3^2)+ I(V4^2) + I(V5^2) + I(V6^2) + I(V7^2) + I(V8^2), data = new_data)
+  coef = reg$coef
+  to_plot_rea<- fonction_obtenue(pts_rupture_rea, coef, x)
+  
+  pts_rupture_dc <- corresp(liste_dates_dc)
+  new_data <- ajout_base(pts_rupture_dc, data_agreg)
+  reg <- lm(log(Taux_agrege_dc) ~ temps + I(temps^2) + I(V1^2) + I(V2^2) + I(V3^2)+ I(V4^2) + I(V5^2) + I(V6^2) + I(V7^2) + I(V8^2), data = new_data)
+  coef = reg$coef
+  to_plot_dc<- fonction_obtenue(pts_rupture_dc, coef, x)
+  
+  pts_rupture_rad <- corresp(liste_dates_rad)
+  new_data <- ajout_base(pts_rupture_rad, data_agreg)
+  reg <- lm(log(Taux_agrege_rad) ~ temps + I(temps^2) + I(V1^2) + I(V2^2) + I(V3^2)+ I(V4^2) + I(V5^2) + I(V6^2) + I(V7^2) + I(V8^2), data = new_data)
+  coef = reg$coef
+  to_plot_rad<- fonction_obtenue(pts_rupture_rad, coef, x)
+  
+  
+  par(mfrow=(c(2,2)))
+  plot(x, new_data$m_hosp, type='l', ylab = 'Hospitalisations')
+  lines(x,exp(to_plot_hosp), col ='red')
+  
+  plot(x, new_data$m_rea, type='l', ylab = 'Réanimations')
+  lines(x,exp(to_plot_rea), col ='red')
+  
+  plot(x, new_data$m_dc, type='l', ylab = 'Décès')
+  lines(x,exp(to_plot_dc), col ='red')
+  
+  plot(x, new_data$m_rad, type='l', ylab = 'RAD')
+  lines(x,exp(to_plot_rad), col ='red')
+  
+}
+
+plot_all(liste_dates_hosp, liste_dates_rea, liste_dates_dc, liste_dates_rad)
+```
+
+
+
+
+
+
+```{r jours semaine, echo= FALSE, include = FALSE}
+data_agreg <- data_agreg %>% mutate(
+  monday = case_when(
+    weekdays(jour) == 'lundi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_monday = case_when(
+    monday == 1~ cumsum(monday),
+    TRUE ~ 0),
+  tuesday = case_when(
+    weekdays(jour) == 'mardi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_tuesday = case_when(
+    tuesday == 1~ cumsum(tuesday),
+    TRUE ~ 0),
+  wed = case_when(
+    weekdays(jour) == 'mercredi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_wed = case_when(
+    wed == 1~ cumsum(wed) ,
+    TRUE ~ 0),
+  thur = case_when(
+    weekdays(jour) == 'jeudi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_thur = case_when(
+    thur == 1~ cumsum(thur) - 1,
+    TRUE ~ 0),
+  fri = case_when(
+    weekdays(jour) == 'vendredi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_fri = case_when(
+    fri == 1~ cumsum(fri) - 1,
+    TRUE ~ 0),
+  sat = case_when(
+    weekdays(jour) == 'samedi' ~ 1,
+    TRUE ~ 0
+  ),
+  num_sat = case_when(
+    sat == 1~ cumsum(sat) - 1,
+    TRUE ~ 0),
+  sun = case_when(
+    weekdays(jour) == 'dimanche' ~ 1,
+    TRUE ~ 0
+  ),
+  num_sun = case_when(
+    sun == 1~ cumsum(sun) - 1,
+    TRUE ~ 0),
+  week = num_monday + num_tuesday + num_wed + num_thur + num_fri + num_sat + num_sun
+)
+
+```
+
+
+
+
+
+
+
+
+
