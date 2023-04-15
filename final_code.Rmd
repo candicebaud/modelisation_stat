@@ -15,7 +15,8 @@ lapply(c("dplyr","chron","ggplot2","tidyr","questionr","survival","forcats","tid
          "data.table","table1","lubridate", "ggpubr","viridis","finalfit","survminer",
          "ggpubr", "ggthemes", "gridExtra", "rstatix","stringr",
          "wesanderson","kableExtra", "naniar","boot","scales","ggsci", "stringr",
-         "Hmisc","DescTools","swimplot", 'stats', 'EnvStats', 'finalfit', 'data.table'), 
+         "Hmisc","DescTools","swimplot", 'stats', 'EnvStats', 'finalfit', 'data.table',
+         'xtable'), 
        library, character.only=TRUE)
 
 #setwd("C:/Users/candi/Desktop/ETUDES/ENSAE2A/semestre 2/options/projet stat")
@@ -231,48 +232,153 @@ plot_all <- function(liste_dates_hosp, liste_dates_rea, liste_dates_dc, liste_da
   x = seq(from = 1, to = 363, by = 1)
   pts_rupture_hosp <- corresp(liste_dates_hosp)
   new_data <- ajout_base(pts_rupture_hosp, data_agreg)
-  reg <- lm(log(Taux_agrégé_hosp) ~ temps + I(temps^2) + I(V1^2) + I(V2^2) + I(V3^2)+ I(V4^2) + I(V5^2) + I(V6^2) + I(V7^2) + I(V8^2), data = new_data)
+  formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
+formula <- as.formula(paste("log(m_hosp) ~", formula_str))
+  reg <- lm(formula, data = new_data)
+  xtable(reg)
   coef = reg$coef
   to_plot_hosp<- fonction_obtenue(pts_rupture_hosp, coef, x)
   
   pts_rupture_rea <- corresp(liste_dates_rea)
   new_data <- ajout_base(pts_rupture_rea, data_agreg)
-  reg <- lm(log(Taux_agrege_rea) ~ temps + I(temps^2) + I(V1^2) + I(V2^2) + I(V3^2)+ I(V4^2) + I(V5^2) + I(V6^2) + I(V7^2) + I(V8^2), data = new_data)
+  formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
+formula <- as.formula(paste("log(m_rea) ~", formula_str))
+  reg <- lm(formula, data = new_data)
+  xtable(reg)
   coef = reg$coef
   to_plot_rea<- fonction_obtenue(pts_rupture_rea, coef, x)
   
   pts_rupture_dc <- corresp(liste_dates_dc)
   new_data <- ajout_base(pts_rupture_dc, data_agreg)
-  reg <- lm(log(Taux_agrege_dc) ~ temps + I(temps^2) + I(V1^2) + I(V2^2) + I(V3^2)+ I(V4^2) + I(V5^2) + I(V6^2) + I(V7^2) + I(V8^2), data = new_data)
+  formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
+formula <- as.formula(paste("log(m_dc) ~", formula_str))
+  reg <- lm(formula, data = new_data)
+  xtable(reg)
   coef = reg$coef
   to_plot_dc<- fonction_obtenue(pts_rupture_dc, coef, x)
   
   pts_rupture_rad <- corresp(liste_dates_rad)
   new_data <- ajout_base(pts_rupture_rad, data_agreg)
-  reg <- lm(log(Taux_agrege_rad) ~ temps + I(temps^2) + I(V1^2) + I(V2^2) + I(V3^2)+ I(V4^2) + I(V5^2) + I(V6^2) + I(V7^2) + I(V8^2), data = new_data)
+  formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
+formula <- as.formula(paste("log(m_rad) ~", formula_str))
+  reg <- lm(formula, data = new_data)
+  xtable(reg)
   coef = reg$coef
   to_plot_rad<- fonction_obtenue(pts_rupture_rad, coef, x)
   
   
   par(mfrow=(c(2,2)))
-  plot(x, new_data$m_hosp, type='l', ylab = 'Hospitalisations')
-  lines(x,exp(to_plot_hosp), col ='red')
+  plot(x, new_data$Taux_agrégé_hosp, type='l', ylab = 'Hospitalisations')
+  lines(x, new_data$m_hosp, type='l', col = 'red')
+  lines(x,exp(to_plot_hosp), col ='green')
   
-  plot(x, new_data$m_rea, type='l', ylab = 'Réanimations')
-  lines(x,exp(to_plot_rea), col ='red')
+  plot(x, new_data$Taux_agrege_rea, type='l', ylab = 'Réanimations')
+  lines(x, new_data$m_rea, type='l', col = 'red')
+  lines(x,exp(to_plot_rea), col ='green')
   
-  plot(x, new_data$m_dc, type='l', ylab = 'Décès')
-  lines(x,exp(to_plot_dc), col ='red')
+  plot(x, new_data$Taux_agrege_dc, type='l', ylab = 'Décès')
+  lines(x, new_data$m_dc, type='l', col = 'red')
+  lines(x,exp(to_plot_dc), col ='green')
   
-  plot(x, new_data$m_rad, type='l', ylab = 'RAD')
-  lines(x,exp(to_plot_rad), col ='red')
+  plot(x, new_data$Taux_agrege_rad, type='l', ylab = 'RAD')
+  lines(x, new_data$m_rad, type='l', col = 'red')
+  lines(x,exp(to_plot_rad), col ='green')
   
 }
 
 plot_all(liste_dates_hosp, liste_dates_rea, liste_dates_dc, liste_dates_rad)
+
 ```
 
 
+## Visualisation des séries par rapport aux points de rupture
+```{r, fig.align="center"}
+liste_dates_hosp <- c('2022-02-14', '2022-04-01', '2022-05-15', '2022-06-24', '2022-07-31', '2022-09-30', '2022-11-01', '2022-12-01')
+
+liste_dates_rea <- c('2022-02-15', '2022-04-01', '2022-05-13', '2022-07-04', '2022-07-31', '2022-09-30', '2022-10-30', '2022-12-01')
+
+liste_dates_dc <- c( '2022-02-14', '2022-04-01', '2022-05-15', '2022-06-24', '2022-07-31', '2022-09-30', '2022-11-01', '2022-12-01')
+
+liste_dates_rad <- c( '2022-02-14', '2022-04-01', '2022-05-15', '2022-06-24', '2022-07-31', '2022-09-30', '2022-11-01', '2022-12-01')
+
+visu <- function(liste_dates_hosp, liste_dates_rea, liste_dates_dc, liste_dates_rad){
+  x = seq(from = 1, to = 363, by = 1)
+  pts_rupture_hosp <- corresp(liste_dates_hosp)
+  new_data <- ajout_base(pts_rupture_hosp, data_agreg)
+  formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
+formula <- as.formula(paste("log(m_hosp) ~", formula_str))
+  reg_hosp <- lm(formula, data = new_data)
+  coef = reg_hosp$coef
+  to_plot_hosp<- fonction_obtenue(pts_rupture_hosp, coef, x)
+  
+  pts_rupture_rea <- corresp(liste_dates_rea)
+  new_data <- ajout_base(pts_rupture_rea, data_agreg)
+  formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
+formula <- as.formula(paste("log(m_rea) ~", formula_str))
+  reg_rea <- lm(formula, data = new_data)
+  coef = reg_rea$coef
+  to_plot_rea<- fonction_obtenue(pts_rupture_rea, coef, x)
+  
+  pts_rupture_dc <- corresp(liste_dates_dc)
+  new_data <- ajout_base(pts_rupture_dc, data_agreg)
+  formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
+formula <- as.formula(paste("log(m_dc) ~", formula_str))
+  reg_dc <- lm(formula, data = new_data)
+  coef = reg_dc$coef
+  to_plot_dc<- fonction_obtenue(pts_rupture_dc, coef, x)
+  
+  pts_rupture_rad <- corresp(liste_dates_rad)
+  new_data <- ajout_base(pts_rupture_rad, data_agreg)
+  formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
+formula <- as.formula(paste("log(m_rad) ~", formula_str))
+  reg_rad <- lm(formula, data = new_data)
+  coef = reg_rad$coef
+  to_plot_rad<- fonction_obtenue(pts_rupture_rad, coef, x)
+  
+  new_data <- new_data %>% mutate(
+    to_plot_hosp = to_plot_hosp, 
+    to_plot_dc = to_plot_dc,
+    to_plot_rea = to_plot_rea,
+    to_plot_rad = to_plot_rad
+  )
+  
+  g1_hosp <- ggplot(new_data, aes(jour)) + geom_line(aes(y=Taux_agrégé_hosp), color = 'black') + geom_line(aes(y=m_hosp), color='red') + geom_line(aes(y=exp(to_plot_hosp)), color = 'green') + ylab('Hospitalisations')
+  g2_hosp <- ggplot(new_data, aes(jour, m_hosp_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_hosp, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("Hospitalisations(différenciée)")
+  g_hosp <- grid.arrange(g1_hosp, g2_hosp, nrow=2)
+  
+  g1_rea <- ggplot(new_data, aes(jour)) + geom_line(aes(y=Taux_agrege_rea), color = 'black') + geom_line(aes(y=m_rea), color='red') + geom_line(aes(y=exp(to_plot_rea)), color = 'green') + ylab('Réanimations')
+  g2_rea <- ggplot(new_data, aes(jour, m_rea_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_rea, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("Réanimations(différenciée)")
+  g_rea <- grid.arrange(g1_rea, g2_rea, nrow=2)
+  
+  g1_dc <- ggplot(new_data, aes(jour)) + geom_line(aes(y=Taux_agrege_dc), color = 'black') + geom_line(aes(y=m_dc), color='red') + geom_line(aes(y=exp(to_plot_dc)), color = 'green') + ylab('Décès')
+  g2_dc <- ggplot(new_data, aes(jour, m_dc_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_dc, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("Décès(différenciée)")
+  g_dc <- grid.arrange(g1_dc, g2_dc, nrow=2)
+  
+  g1_rad <- ggplot(new_data, aes(jour)) + geom_line(aes(y=Taux_agrege_rad), color = 'black') + geom_line(aes(y=m_rad), color='red') + geom_line(aes(y=exp(to_plot_rad)), color = 'green') + ylab('RAD')
+  g2_rad <- ggplot(new_data, aes(jour, m_rad_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_rad, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("RAD(différenciée)")
+  g_rad <- grid.arrange(g1_rad, g2_rad, nrow=2)
+  
+  #plot_grid(g_hosp, g_rea)
+  #plot_grid(g_dc, g_rad)
+  plot_grid(g_hosp, g_rea, g_dc, g_rad)
+  return(list(reg_hosp, reg_rea, reg_dc, reg_rad))
+}
+
+res <- visu(liste_dates_hosp, liste_dates_rea, liste_dates_dc, liste_dates_rad)
+
+```
+
+## Analyse des résidus
+```{r, fig.align="center"}
+par(mfrow = c(2,2))
+plot(res[[1]], title = 'Hospitalisations')
+par(mfrow = c(2,2))
+plot(res[[2]], title = 'Réanimations')
+par(mfrow = c(2,2))
+plot(res[[3]], title = 'Décès')
+par(mfrow = c(2,2))
+plot(res[[4]], title = 'RAD')
+``` 
 
 
 
