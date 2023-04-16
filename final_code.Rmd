@@ -381,5 +381,110 @@ plot(res[[4]], title = 'RAD')
 ``` 
 
 
+# Recherche des points de rupture
+```{r, echo = FALSE, include = FALSE}
+#hospitalisations
+liste_intervalles_hosp_min <- list(c('2022-02-10','2022-03-01'), c('2022-05-10','2022-05-20'), c('2022-07-25','2022-08-05'), c('2022-10-25','2022-11-05'))
+
+liste_intervalles_hosp_max <- list(c('2022-03-25','2022-04-05'), c('2022-06-20','2022-06-30'), c('2022-09-25','2022-10-05'), c('2022-11-25','2022-12-05'))
+
+# réanimation
+liste_intervalles_rea_min <- list(c('2022-02-10','2022-03-01'), c('2022-05-10','2022-05-20'), c('2022-07-25','2022-08-05'), c('2022-10-25','2022-11-05'))
+
+liste_intervalles_rea_max <- list(c('2022-03-25','2022-04-05'), c('2022-06-20','2022-06-30'), c('2022-09-25','2022-10-05'), c('2022-11-25','2022-12-05'))
+
+#dc
+liste_intervalles_dc_min <- list(c('2022-02-10','2022-03-01'), c('2022-05-10','2022-05-20'), c('2022-07-25','2022-08-05'), c('2022-10-25','2022-11-05'))
+
+liste_intervalles_dc_max <- list(c('2022-03-25','2022-04-05'), c('2022-06-20','2022-06-30'), c('2022-09-25','2022-10-05'), c('2022-11-25','2022-12-05'))
 
 
+#rad
+liste_intervalles_rad_min <- list(c('2022-02-10','2022-03-01'), c('2022-05-10','2022-05-20'), c('2022-07-25','2022-08-05'), c('2022-10-25','2022-11-05'))
+
+liste_intervalles_rad_max <- list(c('2022-03-25','2022-04-05'), c('2022-06-20','2022-06-30'), c('2022-09-25','2022-10-05'), c('2022-11-25','2022-12-05'))
+
+
+
+recherche_min <- function(liste_intervalles_dates, m_hosp){
+  liste_min  <- rep(as.Date(liste_intervalles_dates[[1]][1], format ='%Y-%m-%d'), length(liste_intervalles_dates))
+for (i in 1:length(liste_intervalles_dates)){
+  start_date <- as.Date(liste_intervalles_dates[[i]][1], format ='%Y-%m-%d')
+  end_date <- as.Date(liste_intervalles_dates[[i]][2], format ='%Y-%m-%d')
+  interval_df <- data_agreg[data_agreg$jour >= start_date & data_agreg$jour <= end_date,]
+  min_index <- which.min(interval_df$m_hosp)
+  min_date <- interval_df$jour[min_index]
+  liste_min[i] <- min_date
+}
+  return(liste_min)
+}
+
+
+recherche_max <- function(liste_intervalles_dates, m_hosp){
+  liste_max  <- rep(as.Date(liste_intervalles_dates[[1]][1], format ='%Y-%m-%d'), length(liste_intervalles_dates))
+for (i in 1:length(liste_intervalles_dates)){
+  start_date <- as.Date(liste_intervalles_dates[[i]][1], format ='%Y-%m-%d')
+  end_date <- as.Date(liste_intervalles_dates[[i]][2], format ='%Y-%m-%d')
+  interval_df <- data_agreg[data_agreg$jour >= start_date & data_agreg$jour <= end_date,]
+  max_index <- which.max(interval_df$m_hosp)
+  max_date <- interval_df$jour[max_index]
+  liste_max[i] <- max_date
+}
+  return(liste_max)
+}
+
+pts_rupture_hosp_min <- recherche_min(liste_intervalles_hosp_min, m_hosp_diff)
+pts_rupture_rea_min  <- recherche_min(liste_intervalles_rea_min, m_rea_diff)
+pts_rupture_dc_min  <- recherche_min(liste_intervalles_dc_min, m_dc_diff)
+pts_rupture_rad_min  <- recherche_min(liste_intervalles_rad_min, m_rad_diff)
+
+pts_rupture_hosp_max <- recherche_max(liste_intervalles_hosp_max, m_hosp_diff)
+pts_rupture_rea_max  <- recherche_max(liste_intervalles_rea_max, m_rea_diff)
+pts_rupture_dc_max  <- recherche_max(liste_intervalles_dc_max, m_dc_diff)
+pts_rupture_rad_max  <- recherche_max(liste_intervalles_rad_max, m_rad_diff)
+
+#en mettant tout ensemble
+liste_dates_hosp <- sort(c(pts_rupture_hosp_min,pts_rupture_hosp_max))
+liste_dates_rea <- sort(c(pts_rupture_rea_min,pts_rupture_rea_max))
+liste_dates_dc <- sort(c(pts_rupture_dc_min,pts_rupture_dc_max))
+liste_dates_rad <- sort(c(pts_rupture_dc_min,pts_rupture_rad_max))
+
+
+```
+
+## Refit du modèle
+```{r, fig.align="center"}
+
+res <- visu(liste_dates_hosp, liste_dates_rea, liste_dates_dc, liste_dates_rad)
+
+```
+
+
+## Résidus
+```{r, fig.align="center"}
+par(mfrow = c(2,2))
+plot(res[[1]], title = 'Hospitalisations')
+par(mfrow = c(2,2))
+plot(res[[2]], title = 'Réanimations')
+par(mfrow = c(2,2))
+plot(res[[3]], title = 'Décès')
+par(mfrow = c(2,2))
+plot(res[[4]], title = 'RAD')
+``` 
+
+
+## ACF et PACF des résidus
+```{r, fig.align="center"}
+par(mfrow = c(1,2))
+acf(res[[1]])
+pacf(res[[1]])
+par(mfrow = c(1,2))
+acf(res[[2]])
+pacf(res[[2]])
+par(mfrow = c(1,2))
+acf(res[[3]])
+pacf(res[[3]])
+par(mfrow = c(1,2))
+acf(res[[4]])
+pacf(res[[4]])
+``` 
