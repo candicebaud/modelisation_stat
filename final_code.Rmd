@@ -368,8 +368,9 @@ res <- visu(liste_dates_hosp, liste_dates_rea, liste_dates_dc, liste_dates_rad)
 
 ```
 
+
 ## Analyse des résidus
-```{r, fig.align="center"}
+```{r, echo = FALSE, include = FALSE, eval = FALSE}
 par(mfrow = c(2,2))
 plot(res[[1]], title = 'Hospitalisations')
 par(mfrow = c(2,2))
@@ -380,39 +381,60 @@ par(mfrow = c(2,2))
 plot(res[[4]], title = 'RAD')
 ``` 
 
+```{r, fig.align="center"}
+library(forecast)
+checkresiduals(res[[1]])
+checkresiduals(res[[2]])
+checkresiduals(res[[3]])
+checkresiduals(res[[4]])
+```
+
 
 # Recherche des points de rupture
 ```{r, echo = FALSE, include = FALSE}
-#hospitalisations
-liste_intervalles_hosp_min <- list(c('2022-02-10','2022-03-01'), c('2022-05-10','2022-05-20'), c('2022-07-25','2022-08-05'), c('2022-10-25','2022-11-05'))
-
-liste_intervalles_hosp_max <- list(c('2022-03-25','2022-04-05'), c('2022-06-20','2022-06-30'), c('2022-09-25','2022-10-05'), c('2022-11-25','2022-12-05'))
-
-# réanimation
-liste_intervalles_rea_min <- list(c('2022-02-10','2022-03-01'), c('2022-05-10','2022-05-20'), c('2022-07-25','2022-08-05'), c('2022-10-25','2022-11-05'))
-
-liste_intervalles_rea_max <- list(c('2022-03-25','2022-04-05'), c('2022-06-20','2022-06-30'), c('2022-09-25','2022-10-05'), c('2022-11-25','2022-12-05'))
-
-#dc
-liste_intervalles_dc_min <- list(c('2022-02-10','2022-03-01'), c('2022-05-10','2022-05-20'), c('2022-07-25','2022-08-05'), c('2022-10-25','2022-11-05'))
-
-liste_intervalles_dc_max <- list(c('2022-03-25','2022-04-05'), c('2022-06-20','2022-06-30'), c('2022-09-25','2022-10-05'), c('2022-11-25','2022-12-05'))
-
-
-#rad
-liste_intervalles_rad_min <- list(c('2022-02-10','2022-03-01'), c('2022-05-10','2022-05-20'), c('2022-07-25','2022-08-05'), c('2022-10-25','2022-11-05'))
-
-liste_intervalles_rad_max <- list(c('2022-03-25','2022-04-05'), c('2022-06-20','2022-06-30'), c('2022-09-25','2022-10-05'), c('2022-11-25','2022-12-05'))
-
-
-
-recherche_min <- function(liste_intervalles_dates, m_hosp){
+recherche_min_hosp <- function(liste_intervalles_dates){
   liste_min  <- rep(as.Date(liste_intervalles_dates[[1]][1], format ='%Y-%m-%d'), length(liste_intervalles_dates))
 for (i in 1:length(liste_intervalles_dates)){
   start_date <- as.Date(liste_intervalles_dates[[i]][1], format ='%Y-%m-%d')
   end_date <- as.Date(liste_intervalles_dates[[i]][2], format ='%Y-%m-%d')
   interval_df <- data_agreg[data_agreg$jour >= start_date & data_agreg$jour <= end_date,]
-  min_index <- which.min(interval_df$m_hosp)
+  min_index <- which.min(interval_df$m_hosp_diff)
+  min_date <- interval_df$jour[min_index]
+  liste_min[i] <- min_date
+}
+  return(liste_min)
+}
+recherche_min_rea <- function(liste_intervalles_dates){
+  liste_min  <- rep(as.Date(liste_intervalles_dates[[1]][1], format ='%Y-%m-%d'), length(liste_intervalles_dates))
+for (i in 1:length(liste_intervalles_dates)){
+  start_date <- as.Date(liste_intervalles_dates[[i]][1], format ='%Y-%m-%d')
+  end_date <- as.Date(liste_intervalles_dates[[i]][2], format ='%Y-%m-%d')
+  interval_df <- data_agreg[data_agreg$jour >= start_date & data_agreg$jour <= end_date,]
+  min_index <- which.min(interval_df$m_rea_diff)
+  min_date <- interval_df$jour[min_index]
+  liste_min[i] <- min_date
+}
+  return(liste_min)
+}
+recherche_min_dc <- function(liste_intervalles_dates){
+  liste_min  <- rep(as.Date(liste_intervalles_dates[[1]][1], format ='%Y-%m-%d'), length(liste_intervalles_dates))
+for (i in 1:length(liste_intervalles_dates)){
+  start_date <- as.Date(liste_intervalles_dates[[i]][1], format ='%Y-%m-%d')
+  end_date <- as.Date(liste_intervalles_dates[[i]][2], format ='%Y-%m-%d')
+  interval_df <- data_agreg[data_agreg$jour >= start_date & data_agreg$jour <= end_date,]
+  min_index <- which.min(interval_df$m_dc_diff)
+  min_date <- interval_df$jour[min_index]
+  liste_min[i] <- min_date
+}
+  return(liste_min)
+}
+recherche_min_rad <- function(liste_intervalles_dates){
+  liste_min  <- rep(as.Date(liste_intervalles_dates[[1]][1], format ='%Y-%m-%d'), length(liste_intervalles_dates))
+for (i in 1:length(liste_intervalles_dates)){
+  start_date <- as.Date(liste_intervalles_dates[[i]][1], format ='%Y-%m-%d')
+  end_date <- as.Date(liste_intervalles_dates[[i]][2], format ='%Y-%m-%d')
+  interval_df <- data_agreg[data_agreg$jour >= start_date & data_agreg$jour <= end_date,]
+  min_index <- which.min(interval_df$m_rad_diff)
   min_date <- interval_df$jour[min_index]
   liste_min[i] <- min_date
 }
@@ -420,28 +442,90 @@ for (i in 1:length(liste_intervalles_dates)){
 }
 
 
-recherche_max <- function(liste_intervalles_dates, m_hosp){
+recherche_max_hosp <- function(liste_intervalles_dates){
   liste_max  <- rep(as.Date(liste_intervalles_dates[[1]][1], format ='%Y-%m-%d'), length(liste_intervalles_dates))
 for (i in 1:length(liste_intervalles_dates)){
   start_date <- as.Date(liste_intervalles_dates[[i]][1], format ='%Y-%m-%d')
   end_date <- as.Date(liste_intervalles_dates[[i]][2], format ='%Y-%m-%d')
   interval_df <- data_agreg[data_agreg$jour >= start_date & data_agreg$jour <= end_date,]
-  max_index <- which.max(interval_df$m_hosp)
+  max_index <- which.max(interval_df$m_hosp_diff)
   max_date <- interval_df$jour[max_index]
   liste_max[i] <- max_date
 }
   return(liste_max)
 }
+recherche_max_rea <- function(liste_intervalles_dates){
+  liste_max  <- rep(as.Date(liste_intervalles_dates[[1]][1], format ='%Y-%m-%d'), length(liste_intervalles_dates))
+for (i in 1:length(liste_intervalles_dates)){
+  start_date <- as.Date(liste_intervalles_dates[[i]][1], format ='%Y-%m-%d')
+  end_date <- as.Date(liste_intervalles_dates[[i]][2], format ='%Y-%m-%d')
+  interval_df <- data_agreg[data_agreg$jour >= start_date & data_agreg$jour <= end_date,]
+  max_index <- which.max(interval_df$m_rea_diff)
+  max_date <- interval_df$jour[max_index]
+  liste_max[i] <- max_date
+}
+  return(liste_max)
+}
+recherche_max_dc <- function(liste_intervalles_dates){
+  liste_max  <- rep(as.Date(liste_intervalles_dates[[1]][1], format ='%Y-%m-%d'), length(liste_intervalles_dates))
+for (i in 1:length(liste_intervalles_dates)){
+  start_date <- as.Date(liste_intervalles_dates[[i]][1], format ='%Y-%m-%d')
+  end_date <- as.Date(liste_intervalles_dates[[i]][2], format ='%Y-%m-%d')
+  interval_df <- data_agreg[data_agreg$jour >= start_date & data_agreg$jour <= end_date,]
+  max_index <- which.max(interval_df$m_dc_diff)
+  max_date <- interval_df$jour[max_index]
+  liste_max[i] <- max_date
+}
+  return(liste_max)
+}
+recherche_max_rad <- function(liste_intervalles_dates){
+  liste_max  <- rep(as.Date(liste_intervalles_dates[[1]][1], format ='%Y-%m-%d'), length(liste_intervalles_dates))
+for (i in 1:length(liste_intervalles_dates)){
+  start_date <- as.Date(liste_intervalles_dates[[i]][1], format ='%Y-%m-%d')
+  end_date <- as.Date(liste_intervalles_dates[[i]][2], format ='%Y-%m-%d')
+  interval_df <- data_agreg[data_agreg$jour >= start_date & data_agreg$jour <= end_date,]
+  max_index <- which.max(interval_df$m_rad_diff)
+  max_date <- interval_df$jour[max_index]
+  liste_max[i] <- max_date
+}
+  return(liste_max)
+}
+```
 
-pts_rupture_hosp_min <- recherche_min(liste_intervalles_hosp_min, m_hosp_diff)
-pts_rupture_rea_min  <- recherche_min(liste_intervalles_rea_min, m_rea_diff)
-pts_rupture_dc_min  <- recherche_min(liste_intervalles_dc_min, m_dc_diff)
-pts_rupture_rad_min  <- recherche_min(liste_intervalles_rad_min, m_rad_diff)
+```{r, echo = FALSE, include = FALSE}
 
-pts_rupture_hosp_max <- recherche_max(liste_intervalles_hosp_max, m_hosp_diff)
-pts_rupture_rea_max  <- recherche_max(liste_intervalles_rea_max, m_rea_diff)
-pts_rupture_dc_max  <- recherche_max(liste_intervalles_dc_max, m_dc_diff)
-pts_rupture_rad_max  <- recherche_max(liste_intervalles_rad_max, m_rad_diff)
+#hospitalisations
+liste_intervalles_hosp_min <- list(c('2022-02-09','2022-02-26'), c('2022-05-10','2022-05-20'), c('2022-07-25','2022-09-10'), c('2022-10-25','2022-11-05'))
+
+liste_intervalles_hosp_max <- list(c('2022-03-25','2022-04-05'), c('2022-06-20','2022-06-30'), c('2022-09-25','2022-10-05'), c('2022-11-25','2022-12-05'))
+
+# réanimation
+liste_intervalles_rea_min <- list(c('2022-03-01','2022-03-20'), c('2022-05-10','2022-05-20'), c('2022-08-01','2022-08-10'), c('2022-10-30','2022-11-10'))
+
+liste_intervalles_rea_max <- list(c('2022-03-25','2022-04-05'), c('2022-06-20','2022-07-07'), c('2022-09-25','2022-10-05'), c('2022-11-25','2022-12-05'))
+
+#dc
+liste_intervalles_dc_min <- list(c('2022-03-01','2022-03-30'), c('2022-05-20','2022-06-02'), c('2022-08-15','2022-08-30'), c('2022-10-25','2022-11-05'))
+
+liste_intervalles_dc_max <- list(c('2022-04-10','2022-05-10'), c('2022-06-25','2022-07-15'), c('2022-09-25','2022-10-05'), c('2022-11-25','2022-12-05'))
+
+
+#rad
+liste_intervalles_rad_min <- list(c('2022-02-10','2022-03-01'), c('2022-05-01','2022-05-20'), c('2022-08-15','2022-08-20'), c('2022-10-25','2022-11-05'))
+
+liste_intervalles_rad_max <- list(c('2022-03-25','2022-04-05'), c('2022-06-20','2022-07-05'), c('2022-09-25','2022-10-05'), c('2022-11-25','2022-12-05'))
+
+
+
+pts_rupture_hosp_min <- recherche_min_hosp(liste_intervalles_hosp_min)
+pts_rupture_rea_min  <- recherche_min_rea(liste_intervalles_rea_min)
+pts_rupture_dc_min  <- recherche_min_dc(liste_intervalles_dc_min)
+pts_rupture_rad_min  <- recherche_min_rad(liste_intervalles_rad_min)
+
+pts_rupture_hosp_max <- recherche_max_hosp(liste_intervalles_hosp_max)
+pts_rupture_rea_max  <- recherche_max_rea(liste_intervalles_rea_max)
+pts_rupture_dc_max  <- recherche_max_dc(liste_intervalles_dc_max)
+pts_rupture_rad_max  <- recherche_max_rad(liste_intervalles_rad_max)
 
 #en mettant tout ensemble
 liste_dates_hosp <- sort(c(pts_rupture_hosp_min,pts_rupture_hosp_max))
@@ -449,42 +533,76 @@ liste_dates_rea <- sort(c(pts_rupture_rea_min,pts_rupture_rea_max))
 liste_dates_dc <- sort(c(pts_rupture_dc_min,pts_rupture_dc_max))
 liste_dates_rad <- sort(c(pts_rupture_dc_min,pts_rupture_rad_max))
 
-
 ```
 
 ## Refit du modèle
 ```{r, fig.align="center"}
-
 res <- visu(liste_dates_hosp, liste_dates_rea, liste_dates_dc, liste_dates_rad)
+```
+
+## Visualisation des points de rupture
+```{r, fig.align="center"}
+pts_rupture_hosp <- c(as.Date('2022-01-02', format = '%Y-%m-%d'), liste_dates_hosp, as.Date('2022-12-30', format = '%Y-%m-%d'))
+data_hosp <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_hosp, format='%Y-%m-%d') == T)
+
+pts_rupture_rea <- c(as.Date('2022-01-02', format = '%Y-%m-%d'),liste_dates_rea, as.Date('2022-12-30', format = '%Y-%m-%d'))
+data_rea <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_rea, format='%Y-%m-%d') == T)
+
+pts_rupture_dc <- c(as.Date('2022-01-02', format = '%Y-%m-%d'),liste_dates_dc,as.Date('2022-12-30', format = '%Y-%m-%d'))
+data_dc <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_dc, format='%Y-%m-%d') == T)
+
+pts_rupture_rad <- c(as.Date('2022-01-02', format = '%Y-%m-%d'),liste_dates_rad,as.Date('2022-12-30', format = '%Y-%m-%d'))
+data_rad <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_rad, format='%Y-%m-%d') == T)
+
+
+par(mfrow=c(2,2))
+plot(data_agreg$jour, data_agreg$m_hosp_diff, type='l', color = 'black', ylab = 'Hospitalisations', xlab = 'date')
+lines(data_hosp$jour, data_hosp$m_hosp_diff, type = 'l', col = 'red')
+
+plot(data_agreg$jour, data_agreg$m_rea_diff, type='l', color = 'black', ylab = 'Réanimations', xlab = 'date')
+lines(data_rea$jour, data_hosp$m_rea_diff, type = 'l', col = 'red')
+
+plot(data_agreg$jour, data_agreg$m_dc_diff, type='l', color = 'black', ylab = 'Décès', xlab = 'date')
+lines(data_dc$jour, data_hosp$m_dc_diff, type = 'l', col = 'red')
+
+plot(data_agreg$jour, data_agreg$m_rad_diff, type='l', color = 'black', ylab = 'Retours à domicile', xlab = 'date')
+lines(data_rad$jour, data_hosp$m_rad_diff, type = 'l', col = 'red')
+
 
 ```
 
-
 ## Résidus
-```{r, fig.align="center"}
+```{r, eval = FALSE, include = FALSE, echo = FALSE}
 par(mfrow = c(2,2))
-plot(res[[1]], title = 'Hospitalisations')
+plot(res[[1]])
 par(mfrow = c(2,2))
-plot(res[[2]], title = 'Réanimations')
+plot(res[[2]])
 par(mfrow = c(2,2))
-plot(res[[3]], title = 'Décès')
+plot(res[[3]])
 par(mfrow = c(2,2))
-plot(res[[4]], title = 'RAD')
+plot(res[[4]])
+``` 
+
+```{r, eval = FALSE, include = FALSE, echo = FALSE}
+par(mfrow = c(1,2))
+acf(res[[1]]$residuals)
+pacf(res[[1]]$residuals)
+par(mfrow = c(1,2))
+acf(res[[2]]$residuals)
+pacf(res[[2]]$residuals)
+par(mfrow = c(1,2))
+acf(res[[3]]$residuals)
+pacf(res[[3]]$residuals)
+par(mfrow = c(1,2))
+acf(res[[4]]$residuals)
+pacf(res[[4]]$residuals)
 ``` 
 
 
-## ACF et PACF des résidus
 ```{r, fig.align="center"}
-par(mfrow = c(1,2))
-acf(res[[1]])
-pacf(res[[1]])
-par(mfrow = c(1,2))
-acf(res[[2]])
-pacf(res[[2]])
-par(mfrow = c(1,2))
-acf(res[[3]])
-pacf(res[[3]])
-par(mfrow = c(1,2))
-acf(res[[4]])
-pacf(res[[4]])
-``` 
+library(forecast)
+checkresiduals(res[[1]])
+checkresiduals(res[[2]])
+checkresiduals(res[[3]])
+checkresiduals(res[[4]])
+```
