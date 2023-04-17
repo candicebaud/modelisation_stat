@@ -314,6 +314,7 @@ liste_dates_dc <- c( '2022-02-14', '2022-04-01', '2022-05-15', '2022-06-24', '20
 
 liste_dates_rad <- c( '2022-02-14', '2022-04-01', '2022-05-15', '2022-06-24', '2022-07-31', '2022-09-30', '2022-11-01', '2022-12-01')
 
+
 visu <- function(liste_dates_hosp, liste_dates_rea, liste_dates_dc, liste_dates_rad){
   x = seq(from = 1, to = 363, by = 1)
   pts_rupture_hosp <- corresp(liste_dates_hosp)
@@ -321,6 +322,7 @@ visu <- function(liste_dates_hosp, liste_dates_rea, liste_dates_dc, liste_dates_
   formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
 formula <- as.formula(paste("log(m_hosp) ~", formula_str))
   reg_hosp <- lm(formula, data = new_data)
+  xtable(reg_hosp)
   coef = reg_hosp$coef
   to_plot_hosp<- fonction_obtenue(pts_rupture_hosp, coef, x)
   
@@ -329,6 +331,7 @@ formula <- as.formula(paste("log(m_hosp) ~", formula_str))
   formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
 formula <- as.formula(paste("log(m_rea) ~", formula_str))
   reg_rea <- lm(formula, data = new_data)
+  xtable(reg_rea)
   coef = reg_rea$coef
   to_plot_rea<- fonction_obtenue(pts_rupture_rea, coef, x)
   
@@ -337,6 +340,7 @@ formula <- as.formula(paste("log(m_rea) ~", formula_str))
   formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
 formula <- as.formula(paste("log(m_dc) ~", formula_str))
   reg_dc <- lm(formula, data = new_data)
+  xtable(reg_dc)
   coef = reg_dc$coef
   to_plot_dc<- fonction_obtenue(pts_rupture_dc, coef, x)
   
@@ -345,6 +349,7 @@ formula <- as.formula(paste("log(m_dc) ~", formula_str))
   formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
 formula <- as.formula(paste("log(m_rad) ~", formula_str))
   reg_rad <- lm(formula, data = new_data)
+  xtable(reg_rad)
   coef = reg_rad$coef
   to_plot_rad<- fonction_obtenue(pts_rupture_rad, coef, x)
   
@@ -710,9 +715,67 @@ g_rad <- ggplot(data_agreg_all%>%filter(jour<as.Date('2023-01-15', format = '%Y-
 plot_grid(g_hosp, g_rea, g_dc, g_rad)
 
 ``` 
+Représentation des séries
+```{r, fig.align="center"}
+pts_rupture_hosp <- c(as.Date('2022-01-02', format = '%Y-%m-%d'), liste_dates_hosp, as.Date('2022-12-30', format = '%Y-%m-%d'))
+data_hosp <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_hosp, format='%Y-%m-%d') == T)
+
+pts_rupture_rea <- c(as.Date('2022-01-02', format = '%Y-%m-%d'),liste_dates_rea, as.Date('2022-12-30', format = '%Y-%m-%d'))
+data_rea <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_rea, format='%Y-%m-%d') == T)
+
+pts_rupture_dc <- c(as.Date('2022-01-02', format = '%Y-%m-%d'),liste_dates_dc,as.Date('2022-12-30', format = '%Y-%m-%d'))
+data_dc <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_dc, format='%Y-%m-%d') == T)
+
+pts_rupture_rad <- c(as.Date('2022-01-02', format = '%Y-%m-%d'),liste_dates_rad,as.Date('2022-12-30', format = '%Y-%m-%d'))
+data_rad <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_rad, format='%Y-%m-%d') == T)
+
+data_agreg_all_filtered <- data_agreg_all %>% filter(jour<as.Date('2023-01-15', format = '%Y-%m-%d'))
+
+par(mfrow=c(2,2))
+plot(data_agreg_all_filtered$jour, data_agreg_all_filtered$m_hosp_diff, type='l', color = 'black', ylab = 'Hospitalisations', xlab = 'date')
+lines(data_hosp$jour, data_hosp$m_hosp_diff, type = 'l', col = 'red')
+
+plot(data_agreg_all_filtered$jour, data_agreg_all_filtered$m_rea_diff, type='l', color = 'black', ylab = 'Réanimations', xlab = 'date')
+lines(data_rea$jour, data_hosp$m_rea_diff, type = 'l', col = 'red')
+
+plot(data_agreg_all_filtered$jour, data_agreg_all_filtered$m_dc_diff, type='l', color = 'black', ylab = 'Décès', xlab = 'date')
+lines(data_dc$jour, data_hosp$m_dc_diff, type = 'l', col = 'red')
+
+plot(data_agreg_all_filtered$jour, data_agreg_all_filtered$m_rad_diff, type='l', color = 'black', ylab = 'Retours à domicile', xlab = 'date')
+lines(data_rad$jour, data_hosp$m_rad_diff, type = 'l', col = 'red')
 
 
 
+g1_hosp <- ggplot(data_agreg_all_filtered, aes(x=jour)) + geom_line(aes(y=m_hosp)) + geom_line(aes(y=fit_hosp),color='blue') + geom_vline(xintercept = as.Date('2023-01-01', format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + geom_line(aes(y=lwr_hosp), color = 'red') + geom_line(aes(y=upr_hosp), color = 'red') + ylab('Hospitalisations')
+
+g2_hosp <- ggplot(data_agreg_all_filtered, aes(jour, m_hosp_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_hosp, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("Hospitalisations(différenciée)")
+
+g_hosp <- grid.arrange(g1_hosp, g2_hosp, nrow=2)
+
+
+g1_rea <- ggplot(data_agreg_all_filtered, aes(x=jour)) + geom_line(aes(y=m_rea)) + geom_line(aes(y=fit_rea),color='blue') + geom_vline(xintercept = as.Date('2023-01-01', format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + geom_line(aes(y=lwr_rea), color = 'red') + geom_line(aes(y=upr_rea), color = 'red') + ylab('Réanimations')
+
+g2_rea <- ggplot(data_agreg_all_filtered, aes(jour, m_rea_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_rea, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("Réanimations(différenciée)")
+
+g_rea <- grid.arrange(g1_rea, g2_rea, nrow=2)
+
+
+g1_dc <- ggplot(data_agreg_all_filtered, aes(x=jour)) + geom_line(aes(y=m_dc)) + geom_line(aes(y=fit_dc),color='blue') + geom_vline(xintercept = as.Date('2023-01-01', format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + geom_line(aes(y=lwr_dc), color = 'red') + geom_line(aes(y=upr_dc), color = 'red') + ylab('Décès')
+
+g2_dc <- ggplot(data_agreg_all_filtered, aes(jour, m_dc_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_dc, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("Décès(différenciée)")
+
+g_dc <- grid.arrange(g1_dc, g2_dc, nrow=2)
+
+
+g1_rad <- ggplot(data_agreg_all_filtered, aes(x=jour)) + geom_line(aes(y=m_rad)) + geom_line(aes(y=fit_rad),color='blue') + geom_vline(xintercept = as.Date('2023-01-01', format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + geom_line(aes(y=lwr_rad), color = 'red') + geom_line(aes(y=upr_rad), color = 'red') + ylab('RAD')
+
+g2_rad <- ggplot(data_agreg_all_filtered, aes(jour, m_rad_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_rad, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("RAD(différenciée)")
+
+g_rad <- grid.arrange(g1_rad, g2_rad, nrow=2)
+
+plot_grid(g_hosp, g_rea, g_dc, g_rad)
+
+``` 
 
 
 
