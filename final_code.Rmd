@@ -141,18 +141,18 @@ pts_rupture_rad <- c('2022-01-02', '2022-02-14', '2022-04-01', '2022-05-15', '20
 data_rad <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_rad, format='%Y-%m-%d') == T)
 
 
-par(mfrow=c(2,2))
+par(mfrow=c(2,1))
 plot(data_agreg$jour, data_agreg$m_hosp_diff, type='l', color = 'black', ylab = 'Hospitalisations', xlab = 'date')
 lines(data_hosp$jour, data_hosp$m_hosp_diff, type = 'l', col = 'red')
 
 plot(data_agreg$jour, data_agreg$m_rea_diff, type='l', color = 'black', ylab = 'Réanimations', xlab = 'date')
 lines(data_rea$jour, data_hosp$m_rea_diff, type = 'l', col = 'red')
 
-plot(data_agreg$jour, data_agreg$m_dc_diff, type='l', color = 'black', ylab = 'Décès', xlab = 'date')
-lines(data_dc$jour, data_hosp$m_dc_diff, type = 'l', col = 'red')
+#plot(data_agreg$jour, data_agreg$m_dc_diff, type='l', color = 'black', ylab = 'Décès', xlab = 'date')
+#lines(data_dc$jour, data_hosp$m_dc_diff, type = 'l', col = 'red')
 
-plot(data_agreg$jour, data_agreg$m_rad_diff, type='l', color = 'black', ylab = 'Retours à domicile', xlab = 'date')
-lines(data_rad$jour, data_hosp$m_rad_diff, type = 'l', col = 'red')
+#plot(data_agreg$jour, data_agreg$m_rad_diff, type='l', color = 'black', ylab = 'Retours à domicile', xlab = 'date')
+#lines(data_rad$jour, data_hosp$m_rad_diff, type = 'l', col = 'red')
 
 ```
 
@@ -280,7 +280,7 @@ formula <- as.formula(paste("log(m_rad) ~", formula_str))
   to_plot_rad<- fonction_obtenue(pts_rupture_rad, coef, x)
   
   
-  par(mfrow=(c(2,2)))
+  par(mfrow=(c(2,1)))
   plot(x, new_data$Taux_agrégé_hosp, type='l', ylab = 'Hospitalisations')
   lines(x, new_data$m_hosp, type='l', col = 'red')
   lines(x,exp(to_plot_hosp), col ='green')
@@ -289,13 +289,13 @@ formula <- as.formula(paste("log(m_rad) ~", formula_str))
   lines(x, new_data$m_rea, type='l', col = 'red')
   lines(x,exp(to_plot_rea), col ='green')
   
-  plot(x, new_data$Taux_agrege_dc, type='l', ylab = 'Décès')
-  lines(x, new_data$m_dc, type='l', col = 'red')
-  lines(x,exp(to_plot_dc), col ='green')
+  #plot(x, new_data$Taux_agrege_dc, type='l', ylab = 'Décès')
+  #lines(x, new_data$m_dc, type='l', col = 'red')
+  #lines(x,exp(to_plot_dc), col ='green')
   
-  plot(x, new_data$Taux_agrege_rad, type='l', ylab = 'RAD')
-  lines(x, new_data$m_rad, type='l', col = 'red')
-  lines(x,exp(to_plot_rad), col ='green')
+  #plot(x, new_data$Taux_agrege_rad, type='l', ylab = 'RAD')
+  #lines(x, new_data$m_rad, type='l', col = 'red')
+  #lines(x,exp(to_plot_rad), col ='green')
   
 }
 
@@ -368,43 +368,22 @@ formula <- as.formula(paste("log(m_rad) ~", formula_str))
   g2_rea <- ggplot(new_data, aes(jour, m_rea_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_rea, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("Réanimations(différenciée)")
   g_rea <- grid.arrange(g1_rea, g2_rea, nrow=2)
   
-  g1_dc <- ggplot(new_data, aes(jour)) + geom_line(aes(y=Taux_agrege_dc), color = 'black') + geom_line(aes(y=m_dc), color='red') + geom_line(aes(y=exp(to_plot_dc)), color = 'green') + ylab('Décès')
-  g2_dc <- ggplot(new_data, aes(jour, m_dc_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_dc, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("Décès(différenciée)")
-  g_dc <- grid.arrange(g1_dc, g2_dc, nrow=2)
+  #g1_dc <- ggplot(new_data, aes(jour)) + geom_line(aes(y=Taux_agrege_dc), color = 'black') + geom_line(aes(y=m_dc), color='red') + geom_line(aes(y=exp(to_plot_dc)), color = 'green') + ylab('Décès')
+  #g2_dc <- ggplot(new_data, aes(jour, m_dc_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_dc, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("Décès(différenciée)")
+  #g_dc <- grid.arrange(g1_dc, g2_dc, nrow=2)
   
-  g1_rad <- ggplot(new_data, aes(jour)) + geom_line(aes(y=Taux_agrege_rad), color = 'black') + geom_line(aes(y=m_rad), color='red') + geom_line(aes(y=exp(to_plot_rad)), color = 'green') + ylab('RAD')
-  g2_rad <- ggplot(new_data, aes(jour, m_rad_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_rad, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("RAD(différenciée)")
-  g_rad <- grid.arrange(g1_rad, g2_rad, nrow=2)
+  #g1_rad <- ggplot(new_data, aes(jour)) + geom_line(aes(y=Taux_agrege_rad), color = 'black') + geom_line(aes(y=m_rad), color='red') + geom_line(aes(y=exp(to_plot_rad)), color = 'green') + ylab('RAD')
+  #g2_rad <- ggplot(new_data, aes(jour, m_rad_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_rad, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("RAD(différenciée)")
+  #g_rad <- grid.arrange(g1_rad, g2_rad, nrow=2)
   
   #plot_grid(g_hosp, g_rea)
   #plot_grid(g_dc, g_rad)
-  plot_grid(g_hosp, g_rea, g_dc, g_rad)
-  return(list(reg_hosp, reg_rea, reg_dc, reg_rad))
+  plot_grid(g_hosp, g_rea, ncol=1)
+  return(list(reg_hosp, reg_rea))
 }
 
 res <- visu(liste_dates_hosp, liste_dates_rea, liste_dates_dc, liste_dates_rad)
 
-```
-
-
-## Analyse des résidus
-```{r, echo = FALSE, include = FALSE, eval = FALSE}
-par(mfrow = c(2,2))
-plot(res[[1]], title = 'Hospitalisations')
-par(mfrow = c(2,2))
-plot(res[[2]], title = 'Réanimations')
-par(mfrow = c(2,2))
-plot(res[[3]], title = 'Décès')
-par(mfrow = c(2,2))
-plot(res[[4]], title = 'RAD')
-``` 
-
-```{r, fig.align="center"}
-library(forecast)
-checkresiduals(res[[1]])
-checkresiduals(res[[2]])
-checkresiduals(res[[3]])
-checkresiduals(res[[4]])
 ```
 
 
@@ -573,18 +552,18 @@ pts_rupture_rad <- c(as.Date('2022-01-02', format = '%Y-%m-%d'),liste_dates_rad,
 data_rad <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_rad, format='%Y-%m-%d') == T)
 
 
-par(mfrow=c(2,2))
+par(mfrow=c(2,1))
 plot(data_agreg$jour, data_agreg$m_hosp_diff, type='l', color = 'black', ylab = 'Hospitalisations', xlab = 'date')
 lines(data_hosp$jour, data_hosp$m_hosp_diff, type = 'l', col = 'red')
 
 plot(data_agreg$jour, data_agreg$m_rea_diff, type='l', color = 'black', ylab = 'Réanimations', xlab = 'date')
 lines(data_rea$jour, data_hosp$m_rea_diff, type = 'l', col = 'red')
 
-plot(data_agreg$jour, data_agreg$m_dc_diff, type='l', color = 'black', ylab = 'Décès', xlab = 'date')
-lines(data_dc$jour, data_hosp$m_dc_diff, type = 'l', col = 'red')
+#plot(data_agreg$jour, data_agreg$m_dc_diff, type='l', color = 'black', ylab = 'Décès', xlab = 'date')
+#lines(data_dc$jour, data_hosp$m_dc_diff, type = 'l', col = 'red')
 
-plot(data_agreg$jour, data_agreg$m_rad_diff, type='l', color = 'black', ylab = 'Retours à domicile', xlab = 'date')
-lines(data_rad$jour, data_hosp$m_rad_diff, type = 'l', col = 'red')
+#plot(data_agreg$jour, data_agreg$m_rad_diff, type='l', color = 'black', ylab = 'Retours à domicile', xlab = 'date')
+#lines(data_rad$jour, data_hosp$m_rad_diff, type = 'l', col = 'red')
 
 
 ```
@@ -595,10 +574,10 @@ par(mfrow = c(2,2))
 plot(res[[1]])
 par(mfrow = c(2,2))
 plot(res[[2]])
-par(mfrow = c(2,2))
-plot(res[[3]])
-par(mfrow = c(2,2))
-plot(res[[4]])
+#par(mfrow = c(2,2))
+#plot(res[[3]])
+#par(mfrow = c(2,2))
+#plot(res[[4]])
 ``` 
 
 ```{r, eval = FALSE, include = FALSE, echo = FALSE}
@@ -608,12 +587,12 @@ pacf(res[[1]]$residuals)
 par(mfrow = c(1,2))
 acf(res[[2]]$residuals)
 pacf(res[[2]]$residuals)
-par(mfrow = c(1,2))
-acf(res[[3]]$residuals)
-pacf(res[[3]]$residuals)
-par(mfrow = c(1,2))
-acf(res[[4]]$residuals)
-pacf(res[[4]]$residuals)
+#par(mfrow = c(1,2))
+#acf(res[[3]]$residuals)
+#pacf(res[[3]]$residuals)
+#par(mfrow = c(1,2))
+#acf(res[[4]]$residuals)
+#pacf(res[[4]]$residuals)
 ``` 
 
 
@@ -621,8 +600,8 @@ pacf(res[[4]]$residuals)
 library(forecast)
 checkresiduals(res[[1]])
 checkresiduals(res[[2]])
-checkresiduals(res[[3]])
-checkresiduals(res[[4]])
+#checkresiduals(res[[3]])
+#checkresiduals(res[[4]])
 ```
 
 
@@ -648,25 +627,25 @@ formula <- as.formula(paste("log(m_rea) ~", formula_str))
   coef = reg_rea$coef
   to_plot_rea<- fonction_obtenue(pts_rupture_rea, coef, x)
   
-  pts_rupture_dc <- corresp(liste_dates_dc)
-  new_data <- ajout_base(pts_rupture_dc, data_agreg)
-  new_data_dc <- ajout_base(pts_rupture_dc, data_agreg_all)
-  formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
-formula <- as.formula(paste("log(m_dc) ~", formula_str))
-  reg_dc <- lm(formula, data = new_data)
-  coef = reg_dc$coef
-  to_plot_dc<- fonction_obtenue(pts_rupture_dc, coef, x)
+  #pts_rupture_dc <- corresp(liste_dates_dc)
+  #new_data <- ajout_base(pts_rupture_dc, data_agreg)
+  #new_data_dc <- ajout_base(pts_rupture_dc, data_agreg_all)
+  #formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
+  #formula <- as.formula(paste("log(m_dc) ~", formula_str))
+  #reg_dc <- lm(formula, data = new_data)
+  #coef = reg_dc$coef
+  #to_plot_dc<- fonction_obtenue(pts_rupture_dc, coef, x)
   
-  pts_rupture_rad <- corresp(liste_dates_rad)
-  new_data <- ajout_base(pts_rupture_rad, data_agreg)
-  new_data_rad <- ajout_base(pts_rupture_rad, data_agreg_all)
-  formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
-formula <- as.formula(paste("log(m_rad) ~", formula_str))
-  reg_rad <- lm(formula, data = new_data)
-  coef = reg_rad$coef
-  to_plot_rad<- fonction_obtenue(pts_rupture_rad, coef, x)
+  #pts_rupture_rad <- corresp(liste_dates_rad)
+  #new_data <- ajout_base(pts_rupture_rad, data_agreg)
+  #new_data_rad <- ajout_base(pts_rupture_rad, data_agreg_all)
+  #formula_str <- paste("temps + I(temps^2) +", paste("I(", colnames(new_data)[grepl("^V", colnames(new_data))], "^2)", sep = "", collapse = "+"))
+  #formula <- as.formula(paste("log(m_rad) ~", formula_str))
+  #reg_rad <- lm(formula, data = new_data)
+  #coef = reg_rad$coef
+  #to_plot_rad<- fonction_obtenue(pts_rupture_rad, coef, x)
   
-  return(list(reg_hosp, new_data_hosp, reg_rea, new_data_rea, reg_dc, new_data_dc, reg_rad,new_data_rad))
+  return(list(reg_hosp, new_data_hosp, reg_rea, new_data_rea))
 }
 
 res <- visu_predict(liste_dates_hosp, liste_dates_rea, liste_dates_dc, liste_dates_rad)
@@ -675,9 +654,9 @@ pred_hosp <- as.data.frame(predict(res[[1]],res[[2]], interval = 'prediction', l
 
 pred_rea <-  as.data.frame(predict(res[[3]],res[[4]], interval = 'prediction', level = 0.95))
 
-pred_dc <-  as.data.frame(predict(res[[5]],res[[6]], interval = 'prediction', level = 0.95))
+#pred_dc <-  as.data.frame(predict(res[[5]],res[[6]], interval = 'prediction', level = 0.95))
 
-pred_rad <-  as.data.frame(predict(res[[7]],res[[8]], interval = 'prediction', level = 0.95))
+#pred_rad <-  as.data.frame(predict(res[[7]],res[[8]], interval = 'prediction', level = 0.95))
 ```
 
 
@@ -691,16 +670,16 @@ pred_rad <-  as.data.frame(predict(res[[7]],res[[8]], interval = 'prediction', l
 data_agreg_all <- data_agreg_all %>% mutate(
   fit_hosp = exp(pred_hosp$fit),
   fit_rea = exp(pred_rea$fit),
-  fit_dc = exp(pred_dc$fit),
-  fit_rad = exp(pred_rad$fit),
+  #fit_dc = exp(pred_dc$fit),
+  #fit_rad = exp(pred_rad$fit),
   lwr_hosp = exp(pred_hosp$lwr),
   lwr_rea = exp(pred_rea$lwr),
-  lwr_dc = exp(pred_dc$lwr),
-  lwr_rad = exp(pred_rad$lwr),
+  #lwr_dc = exp(pred_dc$lwr),
+  #lwr_rad = exp(pred_rad$lwr),
   upr_hosp = exp(pred_hosp$upr),
   upr_rea = exp(pred_rea$upr),
-  upr_dc = exp(pred_dc$upr),
-  upr_rad = exp(pred_rad$upr)
+  #upr_dc = exp(pred_dc$upr),
+  #upr_rad = exp(pred_rad$upr)
 )
 
 
@@ -708,11 +687,11 @@ g_hosp <- ggplot(data_agreg_all%>%filter(jour<as.Date('2023-01-15', format = '%Y
 
 g_rea <- ggplot(data_agreg_all%>%filter(jour<as.Date('2023-01-15', format = '%Y-%m-%d')), aes(x=jour)) + geom_line(aes(y=m_rea)) + geom_line(aes(y=fit_rea),color='blue') + geom_vline(xintercept = as.Date('2023-01-01', format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + geom_line(aes(y=lwr_rea), color = 'red') + geom_line(aes(y=upr_rea), color = 'red') + ylab('Réanimations')
 
-g_dc <- ggplot(data_agreg_all%>%filter(jour<as.Date('2023-01-15', format = '%Y-%m-%d')), aes(x=jour)) + geom_line(aes(y=m_dc)) + geom_line(aes(y=fit_dc),color='blue') + geom_vline(xintercept = as.Date('2023-01-01', format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + geom_line(aes(y=lwr_dc), color = 'red') + geom_line(aes(y=upr_dc), color = 'red') + ylab('Décès')
+#g_dc <- ggplot(data_agreg_all%>%filter(jour<as.Date('2023-01-15', format = '%Y-%m-%d')), aes(x=jour)) + geom_line(aes(y=m_dc)) + geom_line(aes(y=fit_dc),color='blue') + geom_vline(xintercept = as.Date('2023-01-01', format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + geom_line(aes(y=lwr_dc), color = 'red') + geom_line(aes(y=upr_dc), color = 'red') + ylab('Décès')
 
-g_rad <- ggplot(data_agreg_all%>%filter(jour<as.Date('2023-01-15', format = '%Y-%m-%d')), aes(x=jour)) + geom_line(aes(y=m_rad)) + geom_line(aes(y=fit_rad),color='blue') + geom_vline(xintercept = as.Date('2023-01-01', format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + geom_line(aes(y=lwr_rad), color = 'red') + geom_line(aes(y=upr_rad), color = 'red') + ylab('RAD')
+#g_rad <- ggplot(data_agreg_all%>%filter(jour<as.Date('2023-01-15', format = '%Y-%m-%d')), aes(x=jour)) + geom_line(aes(y=m_rad)) + geom_line(aes(y=fit_rad),color='blue') + geom_vline(xintercept = as.Date('2023-01-01', format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + geom_line(aes(y=lwr_rad), color = 'red') + geom_line(aes(y=upr_rad), color = 'red') + ylab('RAD')
 
-plot_grid(g_hosp, g_rea, g_dc, g_rad)
+plot_grid(g_hosp, g_rea, ncol = 1)
 
 ``` 
 Représentation des séries
@@ -723,11 +702,11 @@ data_hosp <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_hosp, format='%
 pts_rupture_rea <- c(as.Date('2022-01-02', format = '%Y-%m-%d'),liste_dates_rea, as.Date('2022-12-30', format = '%Y-%m-%d'))
 data_rea <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_rea, format='%Y-%m-%d') == T)
 
-pts_rupture_dc <- c(as.Date('2022-01-02', format = '%Y-%m-%d'),liste_dates_dc,as.Date('2022-12-30', format = '%Y-%m-%d'))
-data_dc <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_dc, format='%Y-%m-%d') == T)
+#pts_rupture_dc <- c(as.Date('2022-01-02', format = '%Y-%m-%d'),liste_dates_dc,as.Date('2022-12-30', format = '%Y-%m-%d'))
+#data_dc <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_dc, format='%Y-%m-%d') == T)
 
-pts_rupture_rad <- c(as.Date('2022-01-02', format = '%Y-%m-%d'),liste_dates_rad,as.Date('2022-12-30', format = '%Y-%m-%d'))
-data_rad <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_rad, format='%Y-%m-%d') == T)
+#pts_rupture_rad <- c(as.Date('2022-01-02', format = '%Y-%m-%d'),liste_dates_rad,as.Date('2022-12-30', format = '%Y-%m-%d'))
+#data_rad <- data_agreg %>% filter(jour %in% as.Date(pts_rupture_rad, format='%Y-%m-%d') == T)
 
 data_agreg_all_filtered <- data_agreg_all %>% filter(jour<as.Date('2023-01-15', format = '%Y-%m-%d'))
 
@@ -738,11 +717,11 @@ lines(data_hosp$jour, data_hosp$m_hosp_diff, type = 'l', col = 'red')
 plot(data_agreg_all_filtered$jour, data_agreg_all_filtered$m_rea_diff, type='l', color = 'black', ylab = 'Réanimations', xlab = 'date')
 lines(data_rea$jour, data_hosp$m_rea_diff, type = 'l', col = 'red')
 
-plot(data_agreg_all_filtered$jour, data_agreg_all_filtered$m_dc_diff, type='l', color = 'black', ylab = 'Décès', xlab = 'date')
-lines(data_dc$jour, data_hosp$m_dc_diff, type = 'l', col = 'red')
+#plot(data_agreg_all_filtered$jour, data_agreg_all_filtered$m_dc_diff, type='l', color = 'black', ylab = 'Décès', xlab = 'date')
+#lines(data_dc$jour, data_hosp$m_dc_diff, type = 'l', col = 'red')
 
-plot(data_agreg_all_filtered$jour, data_agreg_all_filtered$m_rad_diff, type='l', color = 'black', ylab = 'Retours à domicile', xlab = 'date')
-lines(data_rad$jour, data_hosp$m_rad_diff, type = 'l', col = 'red')
+#plot(data_agreg_all_filtered$jour, data_agreg_all_filtered$m_rad_diff, type='l', color = 'black', ylab = 'Retours à domicile', xlab = 'date')
+#lines(data_rad$jour, data_hosp$m_rad_diff, type = 'l', col = 'red')
 
 
 
@@ -760,20 +739,20 @@ g2_rea <- ggplot(data_agreg_all_filtered, aes(jour, m_rea_diff)) + geom_line() +
 g_rea <- grid.arrange(g1_rea, g2_rea, nrow=2)
 
 
-g1_dc <- ggplot(data_agreg_all_filtered, aes(x=jour)) + geom_line(aes(y=m_dc)) + geom_line(aes(y=fit_dc),color='blue') + geom_vline(xintercept = as.Date('2023-01-01', format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + geom_line(aes(y=lwr_dc), color = 'red') + geom_line(aes(y=upr_dc), color = 'red') + ylab('Décès')
+#g1_dc <- ggplot(data_agreg_all_filtered, aes(x=jour)) + geom_line(aes(y=m_dc)) + geom_line(aes(y=fit_dc),color='blue') + geom_vline(xintercept = as.Date('2023-01-01', format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + geom_line(aes(y=lwr_dc), color = 'red') + geom_line(aes(y=upr_dc), color = 'red') + ylab('Décès')
 
-g2_dc <- ggplot(data_agreg_all_filtered, aes(jour, m_dc_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_dc, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("Décès(différenciée)")
+#g2_dc <- ggplot(data_agreg_all_filtered, aes(jour, m_dc_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_dc, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("Décès(différenciée)")
 
-g_dc <- grid.arrange(g1_dc, g2_dc, nrow=2)
+#g_dc <- grid.arrange(g1_dc, g2_dc, nrow=2)
 
 
-g1_rad <- ggplot(data_agreg_all_filtered, aes(x=jour)) + geom_line(aes(y=m_rad)) + geom_line(aes(y=fit_rad),color='blue') + geom_vline(xintercept = as.Date('2023-01-01', format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + geom_line(aes(y=lwr_rad), color = 'red') + geom_line(aes(y=upr_rad), color = 'red') + ylab('RAD')
+#g1_rad <- ggplot(data_agreg_all_filtered, aes(x=jour)) + geom_line(aes(y=m_rad)) + geom_line(aes(y=fit_rad),color='blue') + geom_vline(xintercept = as.Date('2023-01-01', format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + geom_line(aes(y=lwr_rad), color = 'red') + geom_line(aes(y=upr_rad), color = 'red') + ylab('RAD')
 
-g2_rad <- ggplot(data_agreg_all_filtered, aes(jour, m_rad_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_rad, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("RAD(différenciée)")
+#g2_rad <- ggplot(data_agreg_all_filtered, aes(jour, m_rad_diff)) + geom_line() +geom_vline(xintercept = as.Date(liste_dates_rad, format = '%Y-%m-%d'), linetype = 'dashed', color = 'red') + ylab("RAD(différenciée)")
 
-g_rad <- grid.arrange(g1_rad, g2_rad, nrow=2)
+#g_rad <- grid.arrange(g1_rad, g2_rad, nrow=2)
 
-plot_grid(g_hosp, g_rea, g_dc, g_rad)
+plot_grid(g_hosp, g_rea, ncol =1)
 
 ``` 
 
