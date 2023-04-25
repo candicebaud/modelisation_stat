@@ -595,15 +595,23 @@ pacf(res[[2]]$residuals)
 #pacf(res[[4]]$residuals)
 ``` 
 
-
+### Résidus non modifiés
 ```{r, fig.align="center"}
-library(forecast)
+suppressWarnings(library(forecast))
 checkresiduals(res[[1]])
 checkresiduals(res[[2]])
 #checkresiduals(res[[3]])
 #checkresiduals(res[[4]])
 ```
 
+### Résidus modifiés (en essayant d'enlever la trend saisonnière)
+Le premier graphe correspond à la série différenciée pour les résidus des hospitalisations, le deuxième à la différence d'ordre 7 de cette même série différenciée. 
+```{r, fig.align="center"}
+test_res <- diff(res[[1]]$residuals, lag = 1)
+test_res_2 <- diff(test_res, lag = 7)
+checkresiduals(test_res_2)
+checkresiduals(test_res)
+```
 
 ## Prédiction
 ```{r, echo = FALSE, include = FALSE}
