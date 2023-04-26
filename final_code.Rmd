@@ -756,74 +756,83 @@ plot_grid(g_hosp, g_rea, ncol =1)
 ``` 
 
 
-
-
-
-
-
-
-
 ### Résidus modifiés 
 ```{r, fig.align="center"}
-alpha = 0.8 
-#363/7
+alpha = 0.8
 h = 51
 res_hosp = res[[1]]$residuals[1:357]
 res_rea = res[[2]]$residuals[1:357]
 
+predicted_values_hosp <- data_agreg_all$fit_hosp[1:357]
+predicted_values_rea <- data_agreg_all$fit_rea[1:357]
 
-predicted_values_hosp <- pred_hosp$fit[1:357]
-predicted_values_rea <- pred_rea$fit[1:357]
+#plot(predicted_values_hosp[1:357],res_hosp[1:357])
 
-w_hosp = (log(data_agreg$m_hosp) - predicted_values_hosp)/(predicted_values_hosp**alpha)
-w_rea = (log(data_agreg$m_rea) - predicted_values_rea)/(predicted_values_rea**alpha)
+#par(mfrow=c(2,2))
+#plot(predicted_values_hosp)
+#plot(data_agreg$m_hosp[1:357])
+
+w_hosp = (data_agreg$Taux_agrégé_hosp[1:357] - predicted_values_hosp)/((predicted_values_hosp)**alpha)
+w_rea = (data_agreg$Taux_agrege_rea[1:357] - predicted_values_rea)/((predicted_values_rea)**alpha)
 
 s_hosp <- numeric(7)
 s_rea <- numeric(7)
 
-for (i in 1:7){
-  for (k in 0:(h-1)){
-    s_hosp[i] = s_hosp[i] + w_hosp[i + 7*k]
-    s_rea[i] = s_rea[i] + w_rea[i + 7*k]}
-  s_hosp = s_hosp/h
-  s_rea = s_rea/h
+#plot(data_agreg$temps[1:357],data_agreg$m_hosp[1:357] - predicted_values_hosp)
+#plot(data_agreg$m_hosp[1:357], predicted_values_hosp)
+
+#plot(w_hosp)
+#plot(w_rea)
+
+for(i in 1:7){
+  s_hosp[i] = mean(w_hosp[i + 7*(0:(h-1))])
+  s_rea[i] = mean(w_rea[i + 7*(0:(h-1))])
 }
 
 eps_hosp = w_hosp - rep(s_hosp,51)
 eps_rea = w_rea - rep(s_rea, 51)
 checkresiduals(eps_hosp)
 checkresiduals(eps_rea)
+
+par(mfrow=c(2,1))
+plot(data_agreg$jour[1:357],eps_hosp, type = 'l', xlab ='Jour', ylab = 'Résidus', main = 'Hospitalisations')
+grid(nx=20, ny=20)
+plot(data_agreg$jour[1:357], eps_rea, type = 'l', xlab ='Jour', ylab = 'Résidus', main = 'Réanimations')
+grid(nx=20, ny=20)
+
+#plot(w_hosp, type = 'l')
 ```
+```{r, eval = FALSE, include = FALSE, echo = FALSE}
+#pour évaluer sur différents alpha; mais pas nécessaire ici 
+residus <- function(alpha){
+  h = 51
+  res_hosp = res[[1]]$residuals[1:357]
+  res_rea = res[[2]]$residuals[1:357]
 
+  predicted_values_hosp <- data_agreg_all$fit_hosp[1:357]
+  predicted_values_rea <- data_agreg_all$fit_rea[1:357]
+  
+  w_hosp = (data_agreg$Taux_agrégé_hosp[1:357] - predicted_values_hosp)/((predicted_values_hosp)**alpha)
+  w_rea = (data_agreg$Taux_agrege_rea[1:357] - predicted_values_rea)/((predicted_values_rea)**alpha)
 
+  s_hosp <- numeric(7)
+  s_rea <- numeric(7)
+  
+  for(i in 1:7){
+  s_hosp[i] = mean(w_hosp[i + 7*(0:(h-1))])
+  s_rea[i] = mean(w_rea[i + 7*(0:(h-1))])}
 
+  eps_hosp = w_hosp - rep(s_hosp,51)
+  eps_rea = w_rea - rep(s_rea, 51)
+  checkresiduals(eps_hosp)
+  checkresiduals(eps_rea)
+  return(list(eps_hosp, eps_rea))
+}
 
-
-```{r, fig.align="center"}
-alpha = 0.8 
-#363/7
-h = 51
-res_hosp = res[[1]]$residuals[1:357]
-res_rea = res[[2]]$residuals[1:357]
-
-
-predicted_values_hosp <- pred_hosp$fit[1:357]
-predicted_values_rea <- pred_rea$fit[1:357]
-
-e_hat_hosp <- log(data_agreg$m_hosp) - predicted_values_hosp
-w_hat_hosp <- e_hat_hosp / predicted_values_hosp
-s_hat_hosp <- sapply(1:7, function(m) mean(w_hat_hosp[m + 7*(0:(h-1))]))
-e_hat_hosp <- (e_hat_hosp - s_hat_hosp[rep(1:7, each=h)]) / predicted_values_hosp
-
-checkresiduals(e_hat_hosp)
-
+list_alpha <- seq(0,5, by= 0.5)
+for (alpha in list_alpha){
+  residus(alpha)
+}
 
 ```
-
-
-
-
-
-
-
 
