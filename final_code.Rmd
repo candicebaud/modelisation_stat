@@ -595,22 +595,13 @@ pacf(res[[2]]$residuals)
 #pacf(res[[4]]$residuals)
 ``` 
 
-### Résidus non modifiés
+### Résidus bruts
 ```{r, fig.align="center"}
 suppressWarnings(library(forecast))
 checkresiduals(res[[1]])
 checkresiduals(res[[2]])
 #checkresiduals(res[[3]])
 #checkresiduals(res[[4]])
-```
-
-### Résidus modifiés (en essayant d'enlever la trend saisonnière)
-Le premier graphe correspond à la série différenciée pour les résidus des hospitalisations, le deuxième à la différence d'ordre 7 de cette même série différenciée. 
-```{r, fig.align="center"}
-test_res <- diff(res[[1]]$residuals, lag = 1)
-test_res_2 <- diff(test_res, lag = 7)
-checkresiduals(test_res_2)
-checkresiduals(test_res)
 ```
 
 ## Prédiction
@@ -772,7 +763,37 @@ plot_grid(g_hosp, g_rea, ncol =1)
 
 
 
+### Résidus modifiés 
+```{r, fig.align="center"}
+alpha = 0.8 
+#363/7
+h = 51
+res_hosp = res[[1]]$residuals[1:357]
+res_rea = res[[2]]$residuals[1:357]
 
+
+predicted_values_hosp <- pred_hosp$fit[1:357]
+predicted_values_rea <- pred_rea$fit[1:357]
+
+w_hosp = (log(data_agreg$m_hosp) - predicted_values_hosp)/(predicted_values_hosp**alpha)
+w_rea = (log(data_agreg$m_rea) - predicted_values_rea)/(predicted_values_rea**alpha)
+
+s_hosp <- numeric(7)
+s_rea <- numeric(7)
+
+for (i in 1:7){
+  for (k in 0:(h-1)){
+    s_hosp[i] = s_hosp[i] + w_hosp[i + 7*k]
+    s_rea[i] = s_rea[i] + w_rea[i + 7*k]}
+  s_hosp = s_hosp/h
+  s_rea = s_rea/h
+}
+
+eps_hosp = w_hosp - rep(s_hosp,51)
+eps_rea = w_rea - rep(s_rea, 51)
+checkresiduals(eps_hosp)
+checkresiduals(eps_rea)
+```
 
 
 
