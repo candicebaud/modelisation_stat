@@ -799,7 +799,26 @@ checkresiduals(eps_rea)
 
 
 
+```{r, fig.align="center"}
+alpha = 0.8 
+#363/7
+h = 51
+res_hosp = res[[1]]$residuals[1:357]
+res_rea = res[[2]]$residuals[1:357]
 
+
+predicted_values_hosp <- pred_hosp$fit[1:357]
+predicted_values_rea <- pred_rea$fit[1:357]
+
+e_hat_hosp <- log(data_agreg$m_hosp) - predicted_values_hosp
+w_hat_hosp <- e_hat_hosp / predicted_values_hosp
+s_hat_hosp <- sapply(1:7, function(m) mean(w_hat_hosp[m + 7*(0:(h-1))]))
+e_hat_hosp <- (e_hat_hosp - s_hat_hosp[rep(1:7, each=h)]) / predicted_values_hosp
+
+checkresiduals(e_hat_hosp)
+
+
+```
 
 
 
