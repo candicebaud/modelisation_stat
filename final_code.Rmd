@@ -568,42 +568,6 @@ lines(data_rea$jour, data_hosp$m_rea_diff, type = 'l', col = 'red')
 
 ```
 
-## Résidus
-```{r, eval = FALSE, include = FALSE, echo = FALSE}
-par(mfrow = c(2,2))
-plot(res[[1]])
-par(mfrow = c(2,2))
-plot(res[[2]])
-#par(mfrow = c(2,2))
-#plot(res[[3]])
-#par(mfrow = c(2,2))
-#plot(res[[4]])
-``` 
-
-```{r, eval = FALSE, include = FALSE, echo = FALSE}
-par(mfrow = c(1,2))
-acf(res[[1]]$residuals)
-pacf(res[[1]]$residuals)
-par(mfrow = c(1,2))
-acf(res[[2]]$residuals)
-pacf(res[[2]]$residuals)
-#par(mfrow = c(1,2))
-#acf(res[[3]]$residuals)
-#pacf(res[[3]]$residuals)
-#par(mfrow = c(1,2))
-#acf(res[[4]]$residuals)
-#pacf(res[[4]]$residuals)
-``` 
-
-### Résidus bruts
-```{r, fig.align="center"}
-suppressWarnings(library(forecast))
-checkresiduals(res[[1]])
-checkresiduals(res[[2]])
-#checkresiduals(res[[3]])
-#checkresiduals(res[[4]])
-```
-
 ## Prédiction
 ```{r, echo = FALSE, include = FALSE}
 visu_predict <- function(liste_dates_hosp, liste_dates_rea, liste_dates_dc, liste_dates_rad){
@@ -758,6 +722,7 @@ plot_grid(g_hosp, g_rea, ncol =1)
 
 ### Résidus modifiés 
 ```{r, fig.align="center"}
+library(forecast)
 alpha = 0.8
 h = 51
 res_hosp = res[[1]]$residuals[1:357]
